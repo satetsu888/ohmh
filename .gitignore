@@ -1,0 +1,11 @@
+node_modules
+
+# build outputs
+/cli/dist
+/extension/dist
+/extension/*.vsix
+
+# env (.env.example のみコミット)
+.env
+.env.*
+!.env.example

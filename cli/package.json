@@ -1,0 +1,52 @@
+{
+  "name": "ohmh",
+  "version": "0.1.0",
+  "description": "Forward webhooks from oh-my-hooks.com to your local dev server.",
+  "license": "MIT",
+  "bin": {
+    "ohmh": "dist/ohmh.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "homepage": "https://oh-my-hooks.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/satetsu888/oh-my-hooks",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/satetsu888/oh-my-hooks/issues"
+  },
+  "keywords": [
+    "webhook",
+    "tunnel",
+    "forward",
+    "oh-my-hooks"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "open": "^10.1.0",
+    "prompts": "^2.4.2",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.13",
+    "@types/prompts": "^2.4.9",
+    "@types/uuid": "^10.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

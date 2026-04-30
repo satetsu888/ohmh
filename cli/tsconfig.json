@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022", "dom"],
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "../shared/**/*.ts"],
+  // *.test.ts は vitest が単独で transform / 実行する際に import 解決と型チェックを行うため、
+  // cli の `tsc --noEmit` から除外する (shared/*.test.ts から vitest を解決するために
+  // 余計な paths 設定や workspace 化が要らない)。
+  "exclude": ["src/**/*.test.ts", "../shared/**/*.test.ts"]
+}
