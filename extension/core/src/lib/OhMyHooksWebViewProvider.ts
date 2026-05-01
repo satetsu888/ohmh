@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
 
 class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
@@ -45,12 +46,22 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
       "codicon.css",
     ]);
     const nonce = this.getNonce();
+    // style-src includes 'unsafe-inline' to allow React inline `style={{...}}` attributes.
+    // Per CSP3, when a nonce is present 'unsafe-inline' is ignored for <style> elements
+    // (covered by the nonce here) but still applies to HTML style attributes — which is
+    // exactly the split we want.
+    const csp = [
+      `default-src 'none'`,
+      `script-src 'nonce-${nonce}' ${webview.cspSource}`,
+      `style-src 'nonce-${nonce}' ${webview.cspSource} 'unsafe-inline'`,
+      `font-src ${webview.cspSource}`,
+    ].join("; ");
 
     return `<!DOCTYPE html>
       <html lang="en">
       <head>
           <meta charset="UTF-8">
-          <meta http-equiv="Content-Security-Policy" content="default-src ${webview.cspSource}; font-src ${webview.cspSource}; style-src ${webview.cspSource} 'nonce-${nonce}';">
+          <meta http-equiv="Content-Security-Policy" content="${csp}">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <link href="${codiconsUri}" rel="stylesheet" />
           <style nonce="${nonce}">${this.getGlobalStyles()}</style>
@@ -113,14 +124,8 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
     return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
   }
 
-  private getNonce() {
-    let text = "";
-    const possible =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (let i = 0; i < 32; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+  private getNonce(): string {
+    return randomBytes(16).toString("base64url");
   }
 }
 
