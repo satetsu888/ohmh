@@ -25,7 +25,8 @@ ohmh/
     ├── protocol.ts          # WS protocol types
     ├── wsClient.ts          # WebSocket client (再接続 / auth_expired ハンドリング)
     ├── forwarder.ts         # localhost への HTTP 転送
-    └── secretStore.ts       # SecretStore interface
+    ├── secretStore.ts       # SecretStore interface
+    └── auth/pkce.ts         # PKCE (S256, base64url) ペア / state 生成
 ```
 
 > `shared/protocol.ts` はサーバ側の protocol 定義と内容を一致させる必要がある。サーバ実装は別リポジトリにあり、当面は手作業同期で運用する。
@@ -67,8 +68,9 @@ npm run package      # 配布用 .vsix を生成
 ### OAuth + PKCE
 
 - Authorization Code Flow + PKCE (S256)
+- 実装は `shared/auth/pkce.ts` に集約 (CLI / Extension / サーバ `verifyPKCE` で同じ encoding を使う)
 - `code_verifier` は `randomBytes(32).toString("base64url")` で生成
-- `code_challenge` は `createHash("sha256").update(verifier).digest("base64")` (サーバの `verifyPKCE` と一致させる)
+- `code_challenge` は `createHash("sha256").update(verifier).digest("base64url")` (RFC 7636 §4.2 準拠で base64url、padding なし)
 - Extension は VS Code authentication API を、CLI は localhost loopback (port 53682-53690) を使う
 
 ### Token Storage (`SecretStore` interface)
