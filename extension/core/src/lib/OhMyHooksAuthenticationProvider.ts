@@ -16,6 +16,7 @@ import {
 } from "vscode";
 import { v4 as uuid } from "uuid";
 import { PromiseAdapter, promiseFromEvent } from "../util";
+import { createPkcePair, generateState } from "../../../../shared/auth/pkce";
 
 const CLIENT_ID = "oh-my-hooks-extension";
 const REDIRECT_URI = "vscode://undefined_publisher.oh-my-hooks";
@@ -34,7 +35,10 @@ class OhMyHooksAuthenticationProvider
   private _sessionChangeEmitter =
     new EventEmitter<AuthenticationProviderAuthenticationSessionsChangeEvent>();
   private _disposable: Disposable;
-  private _pendingStates: string[] = [];
+  // state -> codeVerifier. Looked up in handleUri so that concurrent logins
+  // sharing _codeExchangePromises (keyed by scope) still resolve to the right
+  // verifier.
+  private _pendingFlows = new Map<string, { codeVerifier: string }>();
   private _codeExchangePromises = new Map<
     string,
     { promise: Promise<string>; cancel: EventEmitter<void> }
@@ -72,11 +76,8 @@ class OhMyHooksAuthenticationProvider
   }
 
   public async removeSession(sessionId: string): Promise<void> {
-    console.log("removeSession", sessionId);
-
     const allSessions = await this.context.secrets.get(SESSIONS_SECRET_KEY);
 
-    console.log("allSessions", allSessions);
     if (allSessions) {
       let sessions = JSON.parse(allSessions) as AuthenticationSession[];
       const sessionIdx = sessions.findIndex((s) => s.id === sessionId);
@@ -151,18 +152,19 @@ class OhMyHooksAuthenticationProvider
         cancellable: true,
       },
       async (_, taskCancelToken) => {
-        const stateId = uuid();
-        this._pendingStates.push(stateId);
+        const state = generateState();
+        const pkce = createPkcePair();
+        this._pendingFlows.set(state, { codeVerifier: pkce.codeVerifier });
         const scopeString = scopes.join(" ");
 
         const searchParams = new URLSearchParams([
           ["response_type", "code"],
           ["client_id", CLIENT_ID],
           ["redirect_uri", REDIRECT_URI],
-          ["state", stateId],
+          ["state", state],
           ["scope", scopeString],
-          ["code_challenge", stateId],
-          ["code_challenge_method", "plain"],
+          ["code_challenge", pkce.codeChallenge],
+          ["code_challenge_method", pkce.codeChallengeMethod],
         ]);
         const uri = Uri.parse(
           `${BASE_URL}/oauth2/authorize?${searchParams.toString()}`
@@ -192,9 +194,7 @@ class OhMyHooksAuthenticationProvider
             ).promise,
           ]);
         } finally {
-          this._pendingStates = this._pendingStates.filter(
-            (n) => n !== stateId
-          );
+          this._pendingFlows.delete(state);
           codeExchangePromise?.cancel.fire();
           this._codeExchangePromises.delete(scopeString);
         }
@@ -221,14 +221,14 @@ class OhMyHooksAuthenticationProvider
         return;
       }
 
-      if (!this._pendingStates.some((n) => n === state)) {
+      const flow = this._pendingFlows.get(state);
+      if (!flow) {
         console.error("State not found");
         reject(new Error("State not found"));
         return;
       }
 
-      const access_token = await this.exchangeCodeForToken(code, state);
-      console.log("Got access token:", access_token);
+      const access_token = await this.exchangeCodeForToken(code, flow.codeVerifier);
       resolve(access_token);
     };
 

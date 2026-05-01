@@ -1,5 +1,5 @@
 import { exchangeAuthorizationCode, getMe } from "../api";
-import { createPkcePair, generateState } from "../auth/pkce";
+import { createPkcePair, generateState } from "../../../shared/auth/pkce";
 import { startLoopback } from "../auth/loopback";
 import { CliError, EXIT_AUTH_ERROR } from "../errors";
 import { openSecretStore } from "../session/currentSession";

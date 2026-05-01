@@ -2,14 +2,22 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { createPkcePair, generateState } from "./pkce";
 
+const URL_SAFE = /^[A-Za-z0-9_-]+$/;
+
 describe("createPkcePair", () => {
-  it("returns S256 challenge that matches sha256(verifier).digest('base64')", () => {
-    // Login fails if the digest format doesn't match the server-side verifyPKCE
-    // (see front/app/services/oauth2.server.ts).
+  it("returns S256 challenge that matches sha256(verifier).digest('base64url')", () => {
+    // Server-side verifyPKCE compares against the same base64url digest.
+    // A drift here breaks login end-to-end.
     const pair = createPkcePair();
     expect(pair.codeChallengeMethod).toBe("S256");
-    const expected = createHash("sha256").update(pair.codeVerifier).digest("base64");
+    const expected = createHash("sha256").update(pair.codeVerifier).digest("base64url");
     expect(pair.codeChallenge).toBe(expected);
+  });
+
+  it("emits URL-safe verifier and challenge with no base64 padding", () => {
+    const pair = createPkcePair();
+    expect(pair.codeVerifier).toMatch(URL_SAFE);
+    expect(pair.codeChallenge).toMatch(URL_SAFE);
   });
 
   it("uses a verifier within the PKCE spec length range (43-128)", () => {
@@ -27,10 +35,11 @@ describe("createPkcePair", () => {
 });
 
 describe("generateState", () => {
-  it("returns a non-empty random token", () => {
+  it("returns a non-empty random URL-safe token", () => {
     const a = generateState();
     const b = generateState();
     expect(a.length).toBeGreaterThan(0);
+    expect(a).toMatch(URL_SAFE);
     expect(a).not.toBe(b);
   });
 });
