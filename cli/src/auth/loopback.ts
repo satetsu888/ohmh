@@ -11,7 +11,7 @@ const PORT_END = 53690;
 
 export type LoopbackResult = {
   code: string;
-  state: string | null;
+  state: string;
 };
 
 export type LoopbackHandle = {
@@ -60,11 +60,11 @@ export const startLoopback = async (): Promise<LoopbackHandle> => {
     }
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
-    if (!code) {
+    if (!code || !state) {
       res.statusCode = 400;
-      res.end("missing code");
+      res.end("missing code or state");
       if (pendingReject) {
-        pendingReject(new Error("OAuth callback missing code"));
+        pendingReject(new Error("OAuth callback missing code or state"));
         pendingResolve = pendingReject = null;
       }
       return;

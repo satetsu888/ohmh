@@ -50,7 +50,7 @@ export const loginCommand = async (opts: LoginOptions): Promise<void> => {
   } finally {
     loopback.close();
   }
-  if (result.state && result.state !== state) {
+  if (result.state !== state) {
     throw new CliError("OAuth state mismatch", EXIT_AUTH_ERROR);
   }
 
