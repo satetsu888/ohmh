@@ -10,9 +10,9 @@ type Args = {
 };
 
 /**
- * 必要に応じて履歴をロードする。
- * - request() を呼ぶと extension に getWebhookRequests を依頼し、loading=true。
- * - レスポンスが届いたら onLoaded で親に伝え、loading=false に戻す。
+ * On-demand loader for a webhook's request history.
+ * - Calling request() asks the extension for getWebhookRequests and sets loading=true.
+ * - When the response arrives, calls onLoaded and flips loading back to false.
  */
 export const useWebhookRequestsLoader = ({ vscode, webhookId, onLoaded }: Args) => {
   const [loading, setLoading] = useState(false);

@@ -11,7 +11,7 @@ type Props = {
 
 const COPIED_RESET_MS = 2000;
 
-/** webhook URL とコピーボタン + kind バッジ。id 未払い出しの間はセルを空に保つ。 */
+/** Renders the webhook URL, a copy button, and the kind badge. The cell stays empty until an id is issued. */
 export const WebhookUrlCell = ({ webhook }: Props) => {
   const [copied, setCopied] = useState(false);
 

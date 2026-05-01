@@ -32,8 +32,8 @@ type Props = {
 const REL_TIME_REFRESH_MS = 30_000;
 
 /**
- * Webhook 1 件分の行 (本体 + 展開時の履歴)。状態に応じて子セルに描画を委ねるだけで、
- * このコンポーネント自身は DOM 操作を一切持たない。
+ * One webhook's row (the row body plus the request history when expanded).
+ * Renders by delegating to child cells based on state; performs no DOM work itself.
  */
 export const WebhooksTableRow = ({
   webhook,
@@ -63,7 +63,7 @@ export const WebhooksTableRow = ({
     onLoaded: onRequestsUpdate,
   });
 
-  // 展開中の相対時刻表示を一定間隔でリフレッシュ
+  // Periodically refresh the relative-time labels while the row is expanded.
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!isExpanded || requests.length === 0) return;
@@ -72,15 +72,17 @@ export const WebhooksTableRow = ({
   }, [isExpanded, requests.length]);
 
   const handleToggleExpand = () => {
-    // anon / ephemeral webhook はサーバ履歴を持たないので fetch しない (id 未払い出しでも同様)
+    // Anon / ephemeral webhooks have no server-side history, so skip the fetch
+    // (and skip when no id has been issued yet).
     if (!isExpanded && hasUrl && !isAnonymous && !isEphemeral && requests.length === 0) {
       requestsLoader.request();
     }
     onToggleExpand(!isExpanded);
   };
 
-  // anon / ephemeral は WS push で body 込みの request を webview が保持しているのでそのまま渡す。
-  // 認証ユーザの persistent 履歴は list API が body/headers を含まないため、detail を取り直してから forward に流す。
+  // For anon / ephemeral, the webview already holds the body via the WS push,
+  // so pass the request through as-is. For authed persistent history, the list
+  // API does not include body/headers, so refetch the detail before forwarding.
   const handleResend = async (request: WebhookSourceRequest) => {
     if (isAnonymous || isEphemeral) {
       vscode.postMessage(ResendRequestMessage(webhook.id, request));

@@ -34,8 +34,8 @@ export const loginCommand = async (opts: LoginOptions): Promise<void> => {
     info(`(if the browser does not open automatically, copy and paste the URL above)`);
   }
 
-  // ブラウザを開く。失敗しても URL は表示済みなので手動で開ける。
-  // open は ESM-only パッケージなので dynamic import で読む (tsup が CJS bundle に含めてくれる)。
+  // Open the browser. The URL was already printed, so a failure here is non-fatal.
+  // `open` is an ESM-only package, so import it dynamically (tsup bundles it into the CJS output).
   try {
     const { default: open } = await import("open");
     await open(authorizeUrl.toString());
@@ -63,7 +63,8 @@ export const loginCommand = async (opts: LoginOptions): Promise<void> => {
 
   await store.set(storeKey, exchanged.accessToken);
 
-  // ユーザ情報を取って表示する。失敗しても token は保存済みなので login 自体は成功扱い。
+  // Fetch and display the profile. The token is already stored, so a profile
+  // fetch failure does not fail the login itself.
   let displayName: string | null = null;
   let email: string | null = null;
   let planName: string | null = null;

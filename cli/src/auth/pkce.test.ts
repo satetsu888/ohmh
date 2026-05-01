@@ -4,8 +4,8 @@ import { createPkcePair, generateState } from "./pkce";
 
 describe("createPkcePair", () => {
   it("returns S256 challenge that matches sha256(verifier).digest('base64')", () => {
-    // server-side verifyPKCE が使う digest 形式と一致していなければ login は失敗する。
-    // front/app/services/oauth2.server.ts:165-170 と同じ計算式で検証する。
+    // Login fails if the digest format doesn't match the server-side verifyPKCE
+    // (see front/app/services/oauth2.server.ts).
     const pair = createPkcePair();
     expect(pair.codeChallengeMethod).toBe("S256");
     const expected = createHash("sha256").update(pair.codeVerifier).digest("base64");

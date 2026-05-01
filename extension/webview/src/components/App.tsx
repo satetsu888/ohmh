@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { WebhooksTable } from "./WebhooksTable";
 import { VSCodeApi } from "../types/vscode";
 
-// acquireVsCodeApi は1回だけ呼び出す
+// acquireVsCodeApi must only be called once.
 const vscode: VSCodeApi = acquireVsCodeApi();
 
 const App = () => {
@@ -27,14 +27,12 @@ const App = () => {
     vscode.postMessage(InitialLoadMessage);
   }, []);
 
-  // Save view state when it changes
   useEffect(() => {
     if (expandedWebhooks.length > 0 || Object.keys(requestsData).length > 0 || selectedRequestModal) {
       vscode.postMessage(SaveViewStateMessage(expandedWebhooks, requestsData, selectedRequestModal));
     }
   }, [expandedWebhooks, requestsData, selectedRequestModal]);
 
-  // Show loading state until initialized
   if (!isInitialized) {
     return (
       <div style={{
@@ -52,7 +50,7 @@ const App = () => {
     );
   }
 
-  // 未認証 & guest mode でもない: ログイン画面
+  // Unauthenticated and not in guest mode: show the login screen.
   if (!hasSession && !isGuestMode) {
     return (
       <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', padding: '12px', alignItems: 'center', flexWrap: 'wrap' }}>

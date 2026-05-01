@@ -36,7 +36,7 @@ const styleOf = (connection: Webhook["connection"]): CSSProperties => {
   }
 };
 
-/** 接続状態を表す丸いインジケータ。connecting/disconnecting は spinner として回転。 */
+/** Round indicator that shows the connection state. Spins while connecting / disconnecting. */
 export const ConnectionStatusCell = ({ connection }: Props) => {
   const isSpinning = connection === "connecting" || connection === "disconnecting";
   return (

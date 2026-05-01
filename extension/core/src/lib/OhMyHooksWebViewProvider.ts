@@ -63,9 +63,10 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
       </html>`;
   }
 
-  // webview 全体で使う CSS。
-  // - `@keyframes` や shadow DOM `::part()` 指定は inline style では不可なのでここに集約。
-  // - CSP の style-src nonce 経由で許可される。
+  // Global CSS for the webview.
+  // - `@keyframes` and shadow-DOM `::part()` selectors cannot be expressed
+  //   inline, so they are gathered here.
+  // - Allowed via the nonce in the CSP `style-src` directive.
   private getGlobalStyles(): string {
     return `
       @keyframes oh-my-hooks-spin {
@@ -77,7 +78,7 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
         animation: oh-my-hooks-spin 1s linear infinite;
       }
 
-      /* VSCodeTextField を cell に隙間なくフィットさせる */
+      /* Fit VSCodeTextField into the table cell with no gap. */
       .oh-my-hooks-port-input {
         --input-padding-horizontal: 8px !important;
         width: 100% !important;
@@ -96,7 +97,7 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
         position: relative;
       }
 
-      /* port セルの左右 padding を消す */
+      /* Remove horizontal padding from the port cell. */
       vscode-table-cell.oh-my-hooks-no-padding {
         padding-left: 0 !important;
         padding-right: 0 !important;

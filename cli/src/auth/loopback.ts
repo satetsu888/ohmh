@@ -1,8 +1,10 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 
-// CLI redirect 用の loopback http サーバ。53682〜53690 を順に試して bind に成功したものを使う。
-// front/app/services/oauth2.server.ts の buildCliRedirectUris() と範囲が一致している必要がある。
+// Loopback HTTP server used as the CLI's OAuth redirect target. Tries ports
+// 53682-53690 in order and uses the first one that binds successfully. The
+// range must stay in sync with buildCliRedirectUris() in
+// front/app/services/oauth2.server.ts.
 
 const PORT_START = 53682;
 const PORT_END = 53690;
@@ -15,7 +17,7 @@ export type LoopbackResult = {
 export type LoopbackHandle = {
   port: number;
   redirectUri: string;
-  // ブラウザからの callback を 1 回受け取った時点で resolve する。
+  // Resolves when the browser hits the callback once.
   waitForCallback: (timeoutMs: number) => Promise<LoopbackResult>;
   close: () => void;
 };
@@ -83,7 +85,7 @@ export const startLoopback = async (): Promise<LoopbackHandle> => {
   let bound = false;
   let listenPort = -1;
   for (let port = PORT_START; port <= PORT_END; port++) {
-    // 各試行で server をリスナとして再利用する。失敗時は次のポートへ。
+    // Reuse the same server across attempts; advance to the next port on failure.
     const ok = await tryBind(port, server);
     if (ok) {
       bound = true;
@@ -98,7 +100,7 @@ export const startLoopback = async (): Promise<LoopbackHandle> => {
         `Another ohmh login may already be running.`,
     );
   }
-  // AddressInfo から実際のポートを取得 (上で listenPort と同じはずだが念のため)
+  // Read the actual bound port from AddressInfo (should match listenPort, but verify).
   const address = server.address() as AddressInfo | null;
   if (address && typeof address === "object") {
     listenPort = address.port;
@@ -117,7 +119,7 @@ export const startLoopback = async (): Promise<LoopbackHandle> => {
             pendingResolve = pendingReject = null;
           }
         }, timeoutMs);
-        // resolve / reject 後にタイマー解除
+        // Clear the timeout once the callback resolves or rejects.
         const wrap = <T>(orig: (v: T) => void) => (v: T) => {
           clearTimeout(timer);
           orig(v);

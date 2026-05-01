@@ -19,8 +19,9 @@ const parseEvent = (event: MessageEvent): IncomingMessage | null => {
 };
 
 /**
- * extension に getWebhookRequestDetail を依頼し、対応する webhookRequestDetailResponse を 1 度だけ受け取って返す。
- * 失敗時 (extension が request: null を返す) は null を resolve。
+ * Ask the extension for getWebhookRequestDetail and resolve with the matching
+ * webhookRequestDetailResponse exactly once. Resolves to null when the extension
+ * returns request: null (failure case).
  */
 export const fetchWebhookRequestDetail = (
   vscode: VSCodeApi,

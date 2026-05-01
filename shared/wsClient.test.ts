@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WSClient } from "./wsClient";
 import type { ClientMessage, ServerMessage } from "./protocol";
 
-// 最低限の WebSocket スタブ。globalThis.WebSocket と差し替えて wsClient の挙動を観察する。
+// Minimal WebSocket stub. Swapped into globalThis.WebSocket to observe wsClient behavior.
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
 
@@ -22,13 +22,11 @@ class MockWebSocket {
     MockWebSocket.instances.push(this);
   }
 
-  // テスト側から接続成功をシミュレート
   fireOpen(): void {
     this.readyState = 1;
     this.onopen?.();
   }
 
-  // サーバ -> クライアントメッセージ送信
   fireMessage(msg: ServerMessage): void {
     this.onmessage?.({ data: JSON.stringify(msg) });
   }
@@ -38,7 +36,6 @@ class MockWebSocket {
     this.onclose?.();
   }
 
-  // wsClient.send が呼ぶ
   send(raw: string): void {
     this.sent.push(JSON.parse(raw) as ClientMessage);
   }
@@ -124,8 +121,8 @@ describe("WSClient (anonymous)", () => {
 
     expect(onCreated).toHaveBeenCalledWith("wh_anon");
 
-    // 接続が落ちて再接続したとき、anonymousPending は false なので
-    // subscribeAnonymous は送られない (古い id は破棄される設計どおり)
+    // After a drop+reconnect, anonymousPending is false so subscribeAnonymous
+    // is not re-sent (the old id is discarded by design).
     ws.fireClose();
     await vi.advanceTimersByTimeAsync(2000);
     const ws2 = MockWebSocket.last();
@@ -167,7 +164,7 @@ describe("WSClient (authed)", () => {
     client.subscribe("wh_b");
     expect(ws.sent.filter((m) => m.type === "subscribe")).toHaveLength(2);
 
-    // 切断 → 再接続
+    // Drop + reconnect.
     ws.fireClose();
     await vi.advanceTimersByTimeAsync(2000);
     const ws2 = MockWebSocket.last();
@@ -220,7 +217,7 @@ describe("WSClient (authed)", () => {
     ws.fireMessage({ type: "ephemeralWebhookCreated", webhookId: "wh_eph_1" });
     expect(onEphemeral).toHaveBeenCalledWith("wh_eph_1");
 
-    // ephemeralPending は true のまま (再接続で別の id を再発行する設計)
+    // ephemeralPending stays true so reconnect re-issues a fresh id.
     ws.fireClose();
     await vi.advanceTimersByTimeAsync(2000);
     const ws2 = MockWebSocket.last();
@@ -248,7 +245,7 @@ describe("WSClient (authed)", () => {
       { type: "unsubscribe", webhookId: "wh_eph" },
     ]);
 
-    // 再接続後に subscribeEphemeral が再送されないこと
+    // subscribeEphemeral must not be re-sent after reconnect.
     ws.fireClose();
     await vi.advanceTimersByTimeAsync(2000);
     const ws2 = MockWebSocket.last();
@@ -281,11 +278,10 @@ describe("WSClient (authed)", () => {
       body: null,
       receivedAt: new Date(0).toISOString(),
     });
-    // microtask queue を進める
     await vi.advanceTimersByTimeAsync(0);
 
     expect(onRequest).toHaveBeenCalledTimes(1);
-    // クライアントは response を返さない (片方向プロトコル)
+    // The client never echoes a response back (one-way protocol).
     expect(ws.sent.find((m) => (m as any).type === "response")).toBeUndefined();
   });
 
@@ -318,12 +314,12 @@ describe("WSClient (authed)", () => {
     });
     await client.connect();
     const ws = MockWebSocket.last();
-    // open する前に subscribe を呼んでも socket は connecting 状態なので send は no-op
+    // Calling subscribe before open is a no-op since the socket is still connecting.
     client.subscribe("wh_x");
     expect(ws.sent).toEqual([]);
 
     ws.fireOpen();
-    // open 時に subscriptions を再送する
+    // Subscriptions are replayed on open.
     expect(ws.sent).toContainEqual({ type: "subscribe", webhookId: "wh_x" });
   });
 });

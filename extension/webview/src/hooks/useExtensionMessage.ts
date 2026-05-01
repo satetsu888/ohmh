@@ -3,9 +3,9 @@ import { useEffect } from "react";
 type IncomingMessage = { type: string; args?: Record<string, unknown> };
 
 /**
- * extension からの postMessage を購読する hook。
- * webview ランタイムは event.data に「文字列(JSON)」or「オブジェクト」のどちらでも
- * 渡してくるので、両方を吸収する。
+ * Subscribes to postMessage events from the extension.
+ * The webview runtime delivers event.data as either a JSON string or an object,
+ * so this handles both shapes.
  */
 export const useExtensionMessage = (handler: (msg: IncomingMessage) => void) => {
   useEffect(() => {

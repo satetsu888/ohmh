@@ -23,8 +23,8 @@ const validateCustomSubdomainInput = (value: string): string | undefined => {
   return undefined;
 };
 
-// 作成時の選択ダイアログ。Cancel した場合は undefined を返す。
-// ephemeral webhook はこのダイアログでは扱わない (一覧の placeholder の Connect で発行される)。
+// QuickPick dialog used by the "create webhook" flow. Returns undefined on cancel.
+// Ephemeral webhooks are not handled here; they are issued via the placeholder's Connect button.
 const pickWebhookOptions = async (
   me: api.AccountMe,
 ): Promise<api.CreateWebhookOptions | undefined> => {
@@ -110,12 +110,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const stateStore = new StateStore(context);
 
-  // session_id は extension activate 毎に生成 (永続化しない)。
-  // 同じユーザでも別 VS Code window / 再起動毎に別 DO・別購読になる。
+  // session_id is regenerated on every extension activate (never persisted), so each
+  // VS Code window / restart gets its own Durable Object and subscription set,
+  // even for the same user.
   const sessionId = uuid();
 
   let wsClient: WSClient | null = null;
-  // Guest mode 用の独立した WS。webview の Connect で開始、Disconnect / Sign in / dispose で閉じる。
+  // Independent WS for guest mode. Opened by the webview's Connect, closed on
+  // Disconnect / Sign in / dispose.
   let anonClient: WSClient | null = null;
   let anonForwardPort: number | null = null;
 
@@ -128,8 +130,9 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   };
 
-  // 受信した request を webview に即時 push し、port があれば forward して結果を webview に通知する。
-  // サーバには結果を返さない (一方向 WS)。
+  // Push the received request to the webview immediately, then forward to the local
+  // port (if any) and report the result back to the webview. The server is never
+  // notified of the result; the WS protocol is one-way.
   const handleIncomingRequest = async (req: RequestMessage, port: number | null): Promise<void> => {
     if (provider) {
       provider.postMessage(JSON.stringify(webhookRequestReceived(req.webhookId, {
@@ -207,24 +210,23 @@ export async function activate(context: vscode.ExtensionContext) {
     return wsClient;
   };
 
-  // Store webview state
   let viewState = {
     expandedWebhooks: [] as string[],
     requestsData: {} as Record<string, any[]>,
     selectedRequestModal: null as any
   };
 
-  // Create provider early so it can be used in notification handler
+  // Declared early so the notification handler closure can reference it.
   let provider: OhMyHooksWebViewProvider;
 
   const initialLoad = async () => {
     try {
-      // 未認証だと fetchAll は静かに undefined を返すので、最後に必ず statusChanged を emit して
-      // webview の loading 状態を解除する。
+      // fetchAll silently returns undefined when unauthenticated, so always emit
+      // statusChanged at the end to clear the webview's loading state.
       await stateStore.refreshSession();
       await stateStore.fetchAll();
       await ensureWSClient();
-      // 未認証で前回 guest mode を選んでいた場合は自動復元する
+      // Auto-restore guest mode if the user previously chose it while unauthenticated.
       const status = stateStore.get();
       if (!status.hasSession && !status.isGuestMode && stateStore.getGuestModePreference()) {
         stateStore.enterGuestMode();
@@ -248,20 +250,20 @@ export async function activate(context: vscode.ExtensionContext) {
           break;
         }
         case "signIn": {
-          // Guest mode 中の sign-in はサインイン成功までは guest UI を維持する。
-          // forceSession より先に exitGuestMode を呼ぶと、OAuth 処理中に webview が
-          // 初期 (Login / Use as Guest) 画面へ戻ってしまうため。
+          // While in guest mode, keep the guest UI visible until sign-in actually succeeds.
+          // Calling exitGuestMode before forceSession would flip the webview back to the
+          // initial (Login / Use as Guest) screen during OAuth.
           const wasGuest = stateStore.get().isGuestMode;
           try {
             await stateStore.forceSession();
-            // Sign-in 成功後に anon WS を閉じて guest mode を抜ける
+            // After a successful sign-in, close the anon WS and leave guest mode.
             await closeAnonClient();
             if (wasGuest) {
               stateStore.exitGuestMode();
             }
             await initialLoad();
           } catch (err) {
-            // Guest mode から開始した場合は guest UI に留まる。それ以外は sign-in 画面へ。
+            // If we started in guest mode, stay there; otherwise fall back to the sign-in screen.
             if (!wasGuest) {
               stateStore.clearSessionAndEmit();
             }
@@ -272,8 +274,9 @@ export async function activate(context: vscode.ExtensionContext) {
           break;
         }
         case "useAsGuest": {
-          // 認証なしで Guest mode に入る。entry は 1 つだけ用意して webhook id は未払い出し状態。
-          // Connect ボタンを押すと anon WS を開き、サーバが id を払い出して entry に入る。
+          // Enter guest mode without authentication. A single placeholder entry is
+          // created with no webhook id; clicking Connect opens the anon WS and the
+          // server-issued id is written into the entry.
           if (wsClient) {
             await wsClient.close();
             wsClient = null;
@@ -291,7 +294,7 @@ export async function activate(context: vscode.ExtensionContext) {
           const isGuest = stateStore.get().isGuestMode;
 
           if (isGuest) {
-            // Guest: anon WS を開いて、サーバから払い出された webhook id を entry に書き込む。
+            // Guest: open the anon WS and record the server-issued webhook id into the entry.
             const port = Number(message.args.port);
             if (!Number.isFinite(port)) {
               vscode.window.showErrorMessage("Invalid port");
@@ -320,7 +323,7 @@ export async function activate(context: vscode.ExtensionContext) {
               console.error("[anonClient] error:", err);
             });
             anonClient.on("close", () => {
-              // WS が閉じた = サーバ側で webhook 削除済み。entry の id をクリア。
+              // WS closed = server already deleted the webhook. Clear the entry's id.
               anonForwardPort = null;
               stateStore.clearGuestWebhookId();
             });
@@ -334,14 +337,15 @@ export async function activate(context: vscode.ExtensionContext) {
             break;
           }
 
-          // Auth user: ephemeral placeholder の場合は subscribeEphemeral で id を要求
+          // Authenticated user: request a fresh id via subscribeEphemeral when the
+          // target is the ephemeral placeholder.
           const targetId: string = message.args.webhookId ?? "";
           const port = Number(message.args.port);
           if (!Number.isFinite(port)) {
             vscode.window.showErrorMessage("Invalid port");
             return;
           }
-          // ephemeral placeholder (id "" または isEphemeral=true) の Connect
+          // Connect on the ephemeral placeholder (id == "" or isEphemeral == true).
           const ephemeralEntry = stateStore.get().webhooks.find((w) => w.isEphemeral);
           if (ephemeralEntry && (targetId === "" || targetId === ephemeralEntry.id)) {
             stateStore.setEphemeralConnecting(port);
@@ -351,7 +355,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 throw new Error("not authenticated");
               }
               client.subscribeEphemeral();
-              // setEphemeralWebhookId は onEphemeralWebhookCreated callback で呼ばれる
+              // setEphemeralWebhookId is invoked from the onEphemeralWebhookCreated callback.
             } catch (err) {
               stateStore.clearEphemeralWebhookId();
               throw err;
@@ -359,7 +363,7 @@ export async function activate(context: vscode.ExtensionContext) {
             break;
           }
 
-          // 通常の persistent / customUrl webhook
+          // Normal persistent / customUrl webhook.
           const webhook = stateStore.getWebhookById(targetId);
           if (!webhook) {
             vscode.window.showErrorMessage("Webhook not found");
@@ -386,15 +390,16 @@ export async function activate(context: vscode.ExtensionContext) {
           const isGuest = stateStore.get().isGuestMode;
 
           if (isGuest) {
-            // Guest: 切断中スピナーを出してから WS を閉じる。state クリアは WSClient
-            // の close イベント (clearGuestWebhookId) で行うので UI は実状態を追従する。
+            // Guest: show the disconnecting spinner first, then close the WS.
+            // State is actually cleared from the WSClient close handler
+            // (clearGuestWebhookId), so the UI tracks real state.
             stateStore.setGuestDisconnecting();
             await closeAnonClient();
             break;
           }
 
           const targetId: string = message.args.webhookId;
-          // ephemeral placeholder の Disconnect: unsubscribe → サーバ側で削除 → placeholder クリア
+          // Disconnect on the ephemeral placeholder: unsubscribe → server deletes it → clear placeholder.
           const ephemeralEntry = stateStore.get().webhooks.find((w) => w.isEphemeral);
           if (ephemeralEntry && targetId === ephemeralEntry.id && targetId !== "") {
             stateStore.setEphemeralDisconnecting();
@@ -474,8 +479,9 @@ export async function activate(context: vscode.ExtensionContext) {
         }
         case "resendRequest": {
           try {
-            // webview が body / headers 込みで request を渡してくる前提でそのまま forward に流す。
-            // 認証ユーザは webview 側で getWebhookRequestDetail 経由で詰め直し、anon は WS push の値をそのまま使う。
+            // The webview hands us a request that already includes body and headers,
+            // so we pass it straight to forward(). Authed users repopulate it via
+            // getWebhookRequestDetail; anon uses the WS push payload directly.
             const webhook = stateStore.getWebhookById(message.args.webhookId);
             if (!webhook || webhook.connection !== "connected" || webhook.localPort === null) {
               vscode.window.showErrorMessage("Webhook is not connected");
@@ -533,7 +539,7 @@ export async function activate(context: vscode.ExtensionContext) {
   provider = new OhMyHooksWebViewProvider(context.extensionUri, messageHandler);
   stateStore.on("statusChanged", (status: Status) => {
     provider.postMessage(JSON.stringify(statusChanged(status)));
-    // Also send view state after status update
+    // Also send view state after the status update.
     setTimeout(() => {
       provider.postMessage(JSON.stringify(viewStateResponse(viewState.expandedWebhooks, viewState.requestsData, viewState.selectedRequestModal)));
     }, 100);
@@ -545,7 +551,6 @@ export async function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Register command for creating new webhook
   context.subscriptions.push(
     vscode.commands.registerCommand('oh-my-hooks.createWebhook', async () => {
       try {
@@ -555,7 +560,7 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        // 現在のプランを取得 (custom URL の可否判定に必要)
+        // Fetch the current plan to decide whether custom URL is allowed.
         let me: api.AccountMe;
         try {
           me = await api.getMe(session);
@@ -592,7 +597,6 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Register command for opening settings
   context.subscriptions.push(
     vscode.commands.registerCommand('oh-my-hooks.openSettings', () => {
       const settingsUrl = `${process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787"}/settings`;

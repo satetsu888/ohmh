@@ -40,10 +40,11 @@ export const WebhooksTable = ({
   setSelectedRequestModal
 }: Props) => {
   return (
-    // VscodeTable は first row の cell DOM に直接 style.width を書き込み、
-    // その cell 参照を内部キャッシュで持ち続ける (MutationObserver で再評価しない)。
-    // guest↔auth 遷移では行の DOM が完全に入れ替わり、新しい cell に width が適用されないため
-    // テーブル自体に key を付けて web component ごと作り直し、内部キャッシュをリセットする。
+    // VscodeTable writes style.width directly onto the first row's cell DOM and
+    // caches that cell reference internally (no MutationObserver re-evaluation).
+    // The guest↔auth transition replaces the row DOM entirely, so the new cells
+    // never receive the width. Keying the table itself rebuilds the web component
+    // and resets the internal cache.
     <VscodeTable key={isGuestMode ? "guest" : "auth"} columns={["32px", "44px", "160px", "auto"]}>
       <VscodeTableHeader slot="header">
         <VscodeTableHeaderCell></VscodeTableHeaderCell>
@@ -54,8 +55,8 @@ export const WebhooksTable = ({
       <VscodeTableBody slot="body">
         {webhooks.map((webhook, index) => (
           <WebhooksTableRow
-            // entry の id は ephemeral webhook では Connect/Disconnect で変動するため、
-            // React key には id ではなく安定した index を使う (リストは並び替えされない)。
+            // The entry id changes on Connect/Disconnect for ephemeral webhooks,
+            // so use the stable index as the React key instead of the id (the list is never reordered).
             key={index}
             webhook={webhook}
             startConnect={startConnect}

@@ -7,9 +7,9 @@ import { ForwardResult } from "../../hooks/useExtensionState";
 
 type Props = {
   request: WebhookSourceRequest;
-  /** Resend 可能か (= webhook が connected か) */
+  /** Whether resending is allowed (i.e. the webhook is connected). */
   canResend: boolean;
-  /** 直近の forward 結果 (このセッションで forward していなければ null) */
+  /** Most recent forward result; null if this session has not forwarded the request yet. */
   forwardResult: ForwardResult | null;
   onSelect: () => void;
   onResend: () => void;
@@ -62,7 +62,7 @@ const ForwardBadge = ({ result }: { result: ForwardResult }) => {
   );
 };
 
-/** 展開時に出る、各リクエスト履歴 1 行。 */
+/** Single row in the expanded request-history list. */
 export const RequestRow = ({ request, canResend, forwardResult, onSelect, onResend }: Props) => {
   const { hovered, props: hoverProps } = useHover();
   const path = requestPath(request.url);

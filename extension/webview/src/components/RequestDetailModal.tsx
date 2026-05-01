@@ -27,7 +27,8 @@ export const RequestDetailModal: React.FC<Props> = ({ request, forwardResult, on
       return;
     }
     if (webhook.isAnonymous || webhook.isEphemeral) {
-      // anon / ephemeral はサーバに履歴がないので、props で受け取った request (WS push 由来) をそのまま使う。
+      // Anon / ephemeral webhooks have no server-side history, so use the
+      // request from props as-is (it came from the WS push).
       setFullRequest(request);
       setIsLoading(false);
       return;
@@ -45,7 +46,6 @@ export const RequestDetailModal: React.FC<Props> = ({ request, forwardResult, on
     };
   }, [request, vscode, webhookId, webhook.isAnonymous, webhook.isEphemeral]);
   
-  // Inject spinner CSS
   useEffect(() => {
     const styleId = 'request-detail-modal-styles';
     if (!document.getElementById(styleId)) {
@@ -66,7 +66,8 @@ export const RequestDetailModal: React.FC<Props> = ({ request, forwardResult, on
   
   if (!request) return null;
 
-  // body / headers が必要な箇所では fullRequest を使う。Basic Information は props.request だけで足りる。
+  // Use fullRequest where body / headers are needed; Basic Information only
+  // needs the props.request.
   const displayRequest = fullRequest || request;
   const canResend = webhook.connection === 'connected' && fullRequest !== null;
   const resendTitle = webhook.connection !== 'connected'
@@ -77,13 +78,14 @@ export const RequestDetailModal: React.FC<Props> = ({ request, forwardResult, on
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('ja-JP', {
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      hour12: false,
     });
   };
 
@@ -100,11 +102,9 @@ export const RequestDetailModal: React.FC<Props> = ({ request, forwardResult, on
     if (!body) return 'No body';
     
     try {
-      // Try to parse as JSON and pretty print
       const parsed = JSON.parse(body);
       return JSON.stringify(parsed, null, 2);
     } catch {
-      // If not JSON, return as is
       return body;
     }
   };

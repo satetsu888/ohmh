@@ -26,6 +26,3 @@ export default [{
         semi: "warn",
     },
 }];
-
-// 旧 src/shared/ に対する vscode import 禁止ルールはリポジトリルートの shared/ 移設に伴い
-// shared/eslint.config.mjs へ移動した。

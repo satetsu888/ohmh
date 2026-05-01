@@ -4,11 +4,12 @@ import { WebhookSourceRequest } from "../../../core/src/api";
 
 import { VSCodeApi } from "../types/vscode";
 
-// WS push で受信したリクエストを webview メモリで保持する件数の上限
-// (ExpandedRequests.MAX_ROWS と揃える)
+// Maximum number of WS-pushed requests we keep in the webview's memory.
+// Kept aligned with ExpandedRequests.MAX_ROWS.
 const PUSHED_HISTORY_MAX_ROWS = 5;
 
-// 各 source request の最後の forward 結果。サーバには記録せず、webview のローカル状態のみ。
+// Last forward result for each source request. Not persisted on the server;
+// webview-local state only.
 export type ForwardResult = {
   status: number | null;
   error: string | null;
@@ -53,9 +54,7 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
           }
           break;
         case "refreshRequestsForWebhook":
-          // Trigger a re-fetch of requests for the specified webhook
           if (message.args.webhookId && vscode) {
-            // Send message to get updated requests
             vscode.postMessage({
               type: 'getWebhookRequests',
               args: { webhookId: message.args.webhookId }
@@ -63,7 +62,6 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
           }
           break;
         case "refreshAllExpandedWebhooks":
-          // Refresh all expanded webhooks
           if (message.args.webhookIds && vscode) {
             message.args.webhookIds.forEach((webhookId: string) => {
               vscode.postMessage({
@@ -74,13 +72,14 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
           }
           break;
         case "webhookRequestReceived": {
-          // WS push で受信したリクエストを webview のメモリにそのまま積む。
-          // ephemeral / anon はサーバ履歴がないので必須、persistent でも即時反映のために使う。
+          // Append the WS-pushed request straight into the webview's in-memory list.
+          // Required for ephemeral / anon (no server history); used for persistent
+          // too so the row appears immediately.
           const { webhookId, request } = message.args || {};
           if (!webhookId || !request) {break;}
           setRequestsData((prev) => {
             const existing = prev[webhookId] ?? [];
-            // 同じ id の重複は避ける (サーバ refresh と push の競合用)
+            // Drop any entry with the same id to handle the server-refresh / push race.
             const filtered = existing.filter((r) => r.id !== request.id);
             return {
               ...prev,
@@ -108,8 +107,8 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
       return () => window.removeEventListener("message", messageHandler);
     }, [isInitialized, vscode]);
 
-    // anon webhook の id 切り替わり (Disconnect / 再 Connect) で古い履歴を消す。
-    // guest mode の webhook entry は 1 つで、id は "" → 払い出し → "" を行き来する。
+    // Drop the stale history when the anon webhook id flips (Disconnect / reconnect).
+    // The guest-mode webhook entry is single, and its id alternates "" → issued → "".
     const prevAnonIdRef = useRef<string>("");
     useEffect(() => {
       const anon = webhooks.find((w) => w.isAnonymous);

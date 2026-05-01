@@ -1,5 +1,6 @@
-// 人間向け出力 (stderr) と機械可読出力 (stdout / NDJSON) を分離するための薄いラッパ。
-// --json モード時は人間向けは stderr、イベントは stdout に出す。
+// Thin wrapper that separates human-facing output (stderr) from machine-readable
+// output (stdout / NDJSON). In --json mode, prose goes to stderr and event JSON
+// goes to stdout.
 
 let jsonMode = false;
 let quiet = false;
@@ -20,9 +21,8 @@ export const setVerbose = (enabled: boolean): void => {
 export const isJsonMode = (): boolean => jsonMode;
 
 const writeHuman = (line: string): void => {
-  // JSON モードでは stdout を汚さないため stderr に出す。
-  // 人間モードでは通常 stdout で良いが、connect の per-request 出力 (stdout) と
-  // 進捗ログを混ぜないため、進捗系も全て stderr に統一する。
+  // Always go to stderr: keeps stdout clean in JSON mode, and avoids mixing
+  // progress logs with `connect`'s per-request stdout output in human mode.
   process.stderr.write(line + "\n");
 };
 
@@ -48,7 +48,7 @@ export const warn = (msg: string): void => {
 };
 
 export const error = (msg: string): void => {
-  // エラーは quiet でも出す。jsonMode でも stderr に出して stdout を汚さない。
+  // Errors are emitted even in quiet/json mode; stderr keeps stdout clean.
   writeHuman(`error: ${msg}`);
 };
 
@@ -59,7 +59,7 @@ export const debug = (msg: string): void => {
   writeHuman(`debug: ${msg}`);
 };
 
-// 機械可読 (NDJSON) 出力。jsonMode のときだけ stdout に流す。
+// Machine-readable (NDJSON) output. Only emitted to stdout when jsonMode is on.
 export const emitJsonEvent = (event: Record<string, unknown>): void => {
   if (!jsonMode) {
     return;
@@ -67,8 +67,8 @@ export const emitJsonEvent = (event: Record<string, unknown>): void => {
   process.stdout.write(JSON.stringify(event) + "\n");
 };
 
-// 人間向けの per-event 1 行出力 (connect 中の request ログ等)。
-// 非 JSON モード時のみ stdout に出す。
+// Single-line human-readable per-event output (e.g. request logs during `connect`).
+// Only emitted to stdout when not in JSON mode.
 export const emitHumanLine = (line: string): void => {
   if (jsonMode) {
     return;

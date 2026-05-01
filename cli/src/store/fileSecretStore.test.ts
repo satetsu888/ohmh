@@ -62,7 +62,7 @@ describe("FileSecretStore", () => {
   it("delete on a missing key is a no-op", async () => {
     const store = new FileSecretStore(storePath);
     await store.delete("token:never");
-    // ファイルは作られない (no rewrite)
+    // No file is created (no rewrite).
     await expect(fs.stat(storePath)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
@@ -74,9 +74,10 @@ describe("FileSecretStore", () => {
   });
 
   it("does NOT leak state across two stores backed by different files (regression: shared empty-store reference)", async () => {
-    // 過去に EMPTY_STORE をモジュール定数として保持し `{ ...EMPTY_STORE }` でコピーしていた結果、
-    // tokens オブジェクトが共有されて store A への set が store B からも見えるバグがあった。
-    // 同名キーで別パス・別 store を使い、相互不可侵を担保する。
+    // Previously, EMPTY_STORE was a module-level constant copied with `{ ...EMPTY_STORE }`,
+    // so the inner `tokens` object was shared across instances and a `set` on store A
+    // leaked into store B. This test guards isolation by using two stores backed by
+    // different files but the same key name.
     const pathA = path.join(tmpRoot, "a", "credentials.json");
     const pathB = path.join(tmpRoot, "b", "credentials.json");
     const storeA = new FileSecretStore(pathA);
@@ -93,7 +94,7 @@ describe("FileSecretStore", () => {
     await fs.writeFile(storePath, "not-json{}{");
     const store = new FileSecretStore(storePath);
     expect(await store.get("token:a")).toBeUndefined();
-    // 次の set で書き直されること
+    // The next `set` rewrites the file.
     await store.set("token:a", "ok");
     expect(await store.get("token:a")).toBe("ok");
   });

@@ -9,13 +9,14 @@ export type Status = {
 };
 
 export type Webhook = api.Webhook & {
-  // connecting: WS open / subscribe / id 払い出し待ち
-  // disconnecting: WS close 待ち (UI 上はまだ URL が見えている = 実状態を反映)
+  // connecting: waiting for WS open / subscribe / server-issued id.
+  // disconnecting: waiting for WS close (URL still visible in the UI to reflect real state).
   connection: 'connected' | 'disconnected' | 'connecting' | 'disconnecting';
   localPort: number | null;
-  // anon webhook であることを表す。webhook.id が "" の場合は接続前のプレースホルダ。
+  // Marks an anon webhook. id == "" means the entry is a placeholder before connect.
   isAnonymous?: boolean;
-  // authed ephemeral webhook (一覧の最初に常時 1 件)。Connect で id 払い出し、Disconnect で消える。
+  // The single authed ephemeral entry kept at the top of the list. Connect issues
+  // an id; Disconnect clears it.
   isEphemeral?: boolean;
 };
 
@@ -109,7 +110,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
-  // 既存の VS Code 認証状態を再読込 (sign-in を促さない)
+  // Reread the existing VS Code authentication session without prompting for sign-in.
   public async refreshSession(): Promise<void> {
     try {
       const session = await vscode.authentication.getSession("oh-my-hooks", []);
@@ -119,15 +120,16 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     }
   }
 
-  // 現在の状態を強制的に webview へ通知
+  // Force-push the current state to the webview.
   public emitStatus(): void {
     this.emit('statusChanged', this.get());
   }
 
-  // Guest mode を有効化。webhook entry は最初から 1 つ用意する (id 未払い出し状態)。
-  // 認証ユーザの persistent webhook と完全に同じ Webhook 型で、id が "" の状態。
-  // port 入力 + Connect で id がサーバから払い出される (setGuestWebhookId)。
-  // Disconnect で id がクリアされるが entry 自体は残る (clearGuestWebhookId)。
+  // Enter guest mode. A single placeholder webhook entry is created up-front
+  // (same Webhook shape as an authed persistent webhook, but with id = "").
+  // Entering a port and clicking Connect causes the server to issue an id
+  // (setGuestWebhookId). Disconnect clears the id but keeps the entry
+  // (clearGuestWebhookId).
   public enterGuestMode(): void {
     this._isGuestMode = true;
     this._webhooks = [{
@@ -163,7 +165,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     await this._context.globalState.update(this.GUEST_MODE_PREF_KEY, value);
   }
 
-  // 接続開始 (WS 開く前) に呼ばれて 'connecting' に遷移。port も先に保持。
+  // Called before opening the WS to transition to 'connecting' and stash the port.
   public setGuestConnecting(port: number): void {
     if (!this._isGuestMode || this._webhooks.length === 0) {
       return;
@@ -174,8 +176,9 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
-  // anon WS 接続後、サーバから払い出された webhook id を既存の entry に書き込む。
-  // entry そのものは差し替えず (key 安定のため)、id / connection / localPort のみ更新。
+  // After the anon WS connects, write the server-issued webhook id into the
+  // existing entry. The entry object itself is mutated (not replaced) to keep
+  // React keys stable; only id / connection / localPort change.
   public setGuestWebhookId(webhookId: string, port: number): void {
     if (!this._isGuestMode || this._webhooks.length === 0) {
       return;
@@ -187,8 +190,9 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
-  // 接続切断開始 (WS close を呼ぶ前) に呼ばれて 'disconnecting' に遷移。
-  // URL/id はまだ生きているので保持。実際の close 完了まで spinner 表示。
+  // Called before invoking WS close to transition to 'disconnecting'.
+  // The URL/id stay populated until the close actually completes, so the UI
+  // can keep showing a spinner.
   public setGuestDisconnecting(): void {
     if (!this._isGuestMode || this._webhooks.length === 0) {
       return;
@@ -198,7 +202,8 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
-  // anon WS が閉じた (= サーバ側で webhook 削除) 時。entry は残し、id を空に戻す。
+  // Called when the anon WS closes (= the server has already deleted the
+  // webhook). Keep the entry; reset its id to empty.
   public clearGuestWebhookId(): void {
     if (!this._isGuestMode || this._webhooks.length === 0) {
       return;
@@ -243,7 +248,8 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
           localPort: existing?.localPort || null,
         };
       });
-      // ephemeral placeholder は常に先頭に 1 件保持。既存の状態があれば引き継ぐ。
+      // Always keep one ephemeral placeholder at the top of the list; carry
+      // over its existing state when present.
       const existingEphemeral = this._webhooks.find((w) => w.isEphemeral);
       const ephemeral = existingEphemeral || buildEphemeralPlaceholder();
       this._webhooks = [ephemeral, ...persistent];
@@ -256,7 +262,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     }
   }
 
-  // authed ephemeral 接続開始 (WS open + subscribeEphemeral 要求の前に呼ぶ)
+  // Called before opening the authed WS and sending subscribeEphemeral.
   public setEphemeralConnecting(port: number): void {
     const entry = this._webhooks.find((w) => w.isEphemeral);
     if (!entry) {
@@ -267,7 +273,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
-  // ephemeralWebhookCreated を受けて id を反映
+  // Apply the id received via ephemeralWebhookCreated.
   public setEphemeralWebhookId(webhookId: string, port: number): void {
     const entry = this._webhooks.find((w) => w.isEphemeral);
     if (!entry) {
@@ -276,7 +282,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     entry.id = webhookId;
     entry.connection = 'connected';
     entry.localPort = port;
-    // ephemeral として表示するため expiresAt を未来日付に (UI のバッジ判定用)
+    // Set a future expiresAt so the UI badge logic classifies this entry as ephemeral.
     entry.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     this.emit('statusChanged', this.get());
   }
@@ -290,7 +296,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
-  // 切断完了で id をクリアして placeholder に戻す
+  // Once disconnect completes, clear the id and reset the entry to a placeholder.
   public clearEphemeralWebhookId(): void {
     const entry = this._webhooks.find((w) => w.isEphemeral);
     if (!entry) {
@@ -312,7 +318,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
   }
 
   public async connectWebhook(webhookId: string, port: number): Promise<void> {
-    // Guest mode は session を持たないので session チェックをスキップ
+    // Guest mode has no session, so skip the session check.
     if (!this._isGuestMode) {
       const session = await this.getSession();
       if (!session) {
@@ -328,7 +334,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     webhook.connection = 'connecting';
     webhook.localPort = port;
 
-    // 認証ユーザのみポート設定を永続化 (guest webhook は使い捨てなので保存しない)
+    // Only persist the port for authenticated users; guest webhooks are throwaway.
     if (!this._isGuestMode) {
       await this.saveWebhookPort(webhookId, port);
     }
@@ -347,7 +353,7 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
   }
 
   public async disconnectWebhook(webhookId: string) {
-    // Guest mode は session を持たないので session チェックをスキップ
+    // Guest mode has no session, so skip the session check.
     if (!this._isGuestMode) {
       const session = await this.getSession();
       if (!session) {

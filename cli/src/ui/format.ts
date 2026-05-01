@@ -1,9 +1,9 @@
-// 表整形。依存を増やさないため自前パディングで実装。
+// Table formatting. Implemented with hand-rolled padding to avoid extra dependencies.
 
 export type Column<T> = {
   header: string;
   get: (row: T) => string;
-  // 列幅の上限 (省略時は無制限)。長すぎる場合は末尾を省略 (…) する。
+  // Maximum column width (unlimited when omitted). Overflow is truncated with an ellipsis.
   maxWidth?: number;
 };
 
@@ -37,7 +37,7 @@ export const renderTable = <T>(rows: T[], columns: Column<T>[]): string => {
           return cell.padEnd(widths[i]);
         })
         .join("  ");
-      // header の下に区切り線は引かない (ngrok / curl 風のシンプル出力)
+      // No separator line under the header (keep output minimal, ngrok/curl-style).
       void rowIdx;
       return line;
     })
@@ -49,7 +49,6 @@ export const formatTimestamp = (input: string | number | Date): string => {
   if (Number.isNaN(d.getTime())) {
     return String(input);
   }
-  // YYYY-MM-DD HH:mm:ss (local)
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");

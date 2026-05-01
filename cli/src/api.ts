@@ -1,7 +1,8 @@
 import { HttpError } from "./errors";
 
-// 拡張 (extension/core/src/api.ts) と同じ型・エンドポイントを CLI 用に再定義する。
-// 拡張側は vscode.AuthenticationSession に依存するためコードはそのままは使えない。
+// CLI-side redefinition of the same types and endpoints used by the extension
+// (extension/core/src/api.ts). The extension version depends on
+// vscode.AuthenticationSession, so its code cannot be reused as-is.
 
 export type WebhookKind = "ephemeral" | "persistent" | "customUrl";
 

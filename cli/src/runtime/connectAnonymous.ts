@@ -65,7 +65,8 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
     }
   });
 
-  // SIGINT / SIGTERM で graceful shutdown。WS close でサーバ側の anon webhook も消える。
+  // Graceful shutdown on SIGINT / SIGTERM. The server-side anon webhook is deleted
+  // automatically when the WS closes.
   let shuttingDown = false;
   const shutdown = async () => {
     if (shuttingDown) {
@@ -81,7 +82,7 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
     } catch (err) {
       error(err instanceof Error ? err.message : String(err));
     }
-    // anonymous webhook は WS close でサーバ側で削除される。明示的な REST 呼び出しは不要。
+    // The anonymous webhook is deleted by the server when the WS closes; no REST call needed.
     void webhookId;
     process.exit(0);
   };
@@ -98,8 +99,8 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
     process.exit(1);
   }
 
-  // 接続後はサーバの request push を待ち続けるだけ。Promise を resolve させずに
-  // SIGINT を受けて process.exit するまで保持する。
+  // After connecting, just wait for server-pushed requests. The promise never
+  // resolves; the process exits via the SIGINT/SIGTERM handler.
   await new Promise<void>(() => {
     /* never resolves */
   });

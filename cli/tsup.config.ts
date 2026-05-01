@@ -11,5 +11,4 @@ export default defineConfig({
   minify: false,
   sourcemap: false,
   banner: { js: "#!/usr/bin/env node" },
-  // shared/ も bundle に含める (相対 import で取り込み済み)
 });

@@ -1,9 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 
-// Server (front/app/services/oauth2.server.ts verifyPKCE) は
-//   sha256(verifier) を `digest("base64")` (= 標準 base64) と比較する。
-// ここでも同じエンコードで challenge を作る。`URLSearchParams` が "+" / "/" を
-// 自動でパーセントエンコードするので URL に乗せるときは特別な処理は要らない。
+// Server (front/app/services/oauth2.server.ts verifyPKCE) compares
+//   sha256(verifier) using `digest("base64")` (standard base64), so we generate
+// the challenge with the same encoding here. `URLSearchParams` percent-encodes
+// "+" / "/" automatically, so no extra escaping is needed when putting it in a URL.
 
 export type PkcePair = {
   codeVerifier: string;
@@ -12,7 +12,7 @@ export type PkcePair = {
 };
 
 export const createPkcePair = (): PkcePair => {
-  // 32 byte = 43 char (base64url, 43-128 が PKCE spec の有効範囲)
+  // 32 bytes -> 43 base64url chars (43-128 is the valid range per the PKCE spec).
   const codeVerifier = randomBytes(32).toString("base64url");
   const codeChallenge = createHash("sha256").update(codeVerifier).digest("base64");
   return { codeVerifier, codeChallenge, codeChallengeMethod: "S256" };

@@ -8,33 +8,28 @@ import {
 
 export type WSClientOptions = {
   wsUrl: string;
-  // anonymous モードでは getAccessToken は呼ばれない
+  // Not called in anonymous mode.
   getAccessToken?: () => Promise<string>;
   refreshAccessToken?: () => Promise<string>;
   clientType: ClientType;
   sessionId: string;
-  // サーバから受け取った request をローカルで処理する (forward + UI 通知)。
-  // 一方向プロトコルなので戻り値は不要。
+  // Locally handle a request received from the server (forward + UI notification).
+  // The protocol is one-way, so no response is sent back.
   onRequest: (req: RequestMessage) => Promise<void>;
-  // 再接続のバックオフ初期値 (ms)。デフォルト 1000
   initialReconnectDelayMs?: number;
-  // 再接続のバックオフ上限 (ms)。デフォルト 30000
   maxReconnectDelayMs?: number;
-  // ping 送信間隔 (ms)。デフォルト 25000
   pingIntervalMs?: number;
-  // anonymous=true で接続する場合、認証無しの subprotocol を使い、
-  // 接続後に subscribeAnonymous で webhook を発行してもらう。
+  // When true, connect with the unauthenticated subprotocol and request a webhook
+  // via subscribeAnonymous after the connection opens.
   anonymous?: boolean;
-  // anonymous モードで webhook が発行されたときに通知される。
   onAnonymousWebhookCreated?: (webhookId: string) => void;
-  // authed ephemeral webhook が発行されたときに通知される。
   onEphemeralWebhookCreated?: (webhookId: string) => void;
 };
 
 type State = "idle" | "connecting" | "open" | "closing" | "closed";
 
-// ServerMessage / ClientMessage を WS で送受する薄いクライアント。
-// VS Code API には依存しない。
+// Thin WebSocket client that sends/receives ServerMessage / ClientMessage.
+// Has no dependency on the VS Code API.
 export class WSClient extends EventEmitter {
   private opts: WSClientOptions & {
     initialReconnectDelayMs: number;
@@ -46,13 +41,13 @@ export class WSClient extends EventEmitter {
   private reconnectDelay: number;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
-  // 再接続後に subscribe を再送するために、購読中の webhookId を保持
+  // Tracks webhookIds we're subscribed to so we can re-send subscribe on reconnect.
   private subscriptions = new Set<string>();
-  // anonymous モードで再接続時に subscribeAnonymous をやり直すフラグ
+  // True when subscribeAnonymous needs to be re-sent on reconnect.
   private anonymousPending = false;
-  // authed mode で再接続時に subscribeEphemeral をやり直すフラグ
+  // True when subscribeEphemeral needs to be re-sent on reconnect.
   private ephemeralPending = false;
-  // 意図的な close 中は再接続しない
+  // Skip auto-reconnect while we're closing on purpose.
   private intentionalClose = false;
 
   constructor(options: WSClientOptions) {
@@ -90,15 +85,15 @@ export class WSClient extends EventEmitter {
     this.send({ type: "unsubscribe", webhookId });
   }
 
-  // authed ephemeral webhook を要求する。サーバが新規 webhook を作成し
-  // ephemeralWebhookCreated を返す。
+  // Request an authed ephemeral webhook. The server creates a new webhook and
+  // responds with ephemeralWebhookCreated.
   subscribeEphemeral(): void {
     this.ephemeralPending = true;
     this.send({ type: "subscribeEphemeral" });
   }
 
-  // ephemeral disconnect 用 helper: unsubscribe を送って pending フラグを下げる。
-  // 既存の id は呼び出し側で管理。サーバ側は unsubscribe を受けて該当 ephemeral を削除する。
+  // Helper for ephemeral disconnect: send unsubscribe and clear the pending flag.
+  // The caller owns the existing id; the server deletes the ephemeral webhook on unsubscribe.
   unsubscribeEphemeral(webhookId: string): void {
     this.ephemeralPending = false;
     this.unsubscribe(webhookId);
@@ -125,8 +120,8 @@ export class WSClient extends EventEmitter {
 
   private send(message: ClientMessage): void {
     if (this.state !== "open" || !this.ws) {
-      // 接続できていなければ破棄する。subscribe は subscriptions に保持済みなので
-      // 再接続時に自動で再送される。
+      // Drop the message when not connected. subscribe state is held in
+      // `subscriptions` and will be re-sent automatically on reconnect.
       return;
     }
     try {
@@ -160,9 +155,10 @@ export class WSClient extends EventEmitter {
 
     let ws: WebSocket;
     try {
-      // WebSocket は Node.js 22+ / VS Code 環境で global に存在する想定。
-      // Bearer ヘッダはブラウザ標準 WebSocket では渡せないため、Sec-WebSocket-Protocol で送る。
-      // anonymous モードでは "anonymous" subprotocol を使う。
+      // WebSocket is expected to be a global on Node.js 22+ and inside VS Code.
+      // The browser WebSocket API cannot send custom headers, so the bearer token
+      // is transmitted via Sec-WebSocket-Protocol. Anonymous mode uses the
+      // "anonymous" subprotocol instead.
       ws = new WebSocket(url.toString(), [subprotocol]);
     } catch (err) {
       this.state = "closed";
@@ -178,16 +174,16 @@ export class WSClient extends EventEmitter {
       this.reconnectDelay = this.opts.initialReconnectDelayMs;
       this.emit("open");
       if (this.opts.anonymous) {
-        // anon: 接続のたびに新規 webhook を要求 (古い id は破棄される想定)
+        // Anon: request a fresh webhook on every connect; the previous id is discarded.
         if (this.anonymousPending) {
           this.send({ type: "subscribeAnonymous" });
         }
       } else {
-        // 認証時は subscriptions を再送
+        // Authed: replay all current subscriptions.
         for (const webhookId of this.subscriptions) {
           this.send({ type: "subscribe", webhookId });
         }
-        // ephemeral を要求していた場合は再要求 (新しい id が払い出される)
+        // Re-request the ephemeral webhook if one was previously active (a new id is issued).
         if (this.ephemeralPending) {
           this.send({ type: "subscribeEphemeral" });
         }
@@ -201,7 +197,7 @@ export class WSClient extends EventEmitter {
 
     ws.onerror = (event: Event) => {
       this.emit("error", new Error("websocket error"));
-      // onclose も発火するはずなので、ここでは reconnect を仕込まない
+      // onclose is expected to fire as well, so reconnect is scheduled there.
       void event;
     };
 
@@ -213,7 +209,7 @@ export class WSClient extends EventEmitter {
       this.emit("close");
       if (!this.intentionalClose) {
         if (wasOpen) {
-          // 一度繋がっていた接続が切れたので即座に再接続を試みる
+          // We had a live connection that just dropped; reset backoff to retry quickly.
           this.reconnectDelay = this.opts.initialReconnectDelayMs;
         }
         this.scheduleReconnect();
@@ -241,7 +237,7 @@ export class WSClient extends EventEmitter {
         break;
       }
       case "auth_expired": {
-        // refreshAccessToken があれば呼ぶ。無ければ単に再接続する
+        // Call refreshAccessToken if provided; otherwise just reconnect.
         try {
           if (this.opts.refreshAccessToken) {
             await this.opts.refreshAccessToken();
@@ -249,7 +245,7 @@ export class WSClient extends EventEmitter {
         } catch (err) {
           this.emit("error", err);
         }
-        // 既存接続を閉じて再接続
+        // Close the current connection so the reconnect logic kicks in.
         if (this.ws) {
           try { this.ws.close(); } catch { /* ignore */ }
         }
@@ -264,7 +260,7 @@ export class WSClient extends EventEmitter {
         break;
       }
       case "ephemeralWebhookCreated": {
-        // ephemeralPending はまだ true のまま (再接続時に再要求するため)
+        // Leave ephemeralPending=true so we re-request on reconnect.
         if (this.opts.onEphemeralWebhookCreated) {
           this.opts.onEphemeralWebhookCreated(parsed.webhookId);
         }

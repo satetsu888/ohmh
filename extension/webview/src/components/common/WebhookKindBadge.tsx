@@ -17,13 +17,14 @@ type Props = {
   webhook: Webhook;
 };
 
-/** Webhook 1 件の kind を小さなバッジで表示する。anon / authed ephemeral は接続前 (id 空) でも ephemeral バッジを出す。 */
+/** Small badge that shows a webhook's kind. Anon / authed ephemeral entries
+ *  show the "ephemeral" badge even before connect (when id is still empty). */
 export const WebhookKindBadge = ({ webhook }: Props) => {
   let kind: WebhookKind;
   if (webhook.isAnonymous || webhook.isEphemeral) {
     kind = 'ephemeral';
   } else if (webhook.id === "") {
-    // ephemeral / anon フラグも無く id も空の場合は描画しない (実際には起こらない想定)
+    // No ephemeral / anon flag and no id: render nothing (not expected in practice).
     return null;
   } else {
     kind = classifyWebhook(webhook);

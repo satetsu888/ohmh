@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { SecretStore } from "../../../shared/secretStore";
 
-// XDG 準拠の credentials.json (chmod 0600) で token を保持する SecretStore 実装。
-// shape:
+// SecretStore implementation backed by an XDG-style credentials.json (chmod 0600).
+// File shape:
 //   {
 //     "version": 1,
 //     "tokens": { "<key>": { "value": "<accessToken>", "savedAt": <unix-seconds> } }
@@ -19,7 +19,7 @@ const emptyStore = (): StoreShape => ({ version: 1, tokens: {} });
 
 const ensureDir = async (dir: string): Promise<void> => {
   await fs.mkdir(dir, { recursive: true });
-  // best-effort で 0700 (Windows では noop)
+  // Best-effort 0700 (no-op on Windows).
   try {
     await fs.chmod(dir, 0o700);
   } catch {
@@ -37,8 +37,9 @@ const readStore = async (filePath: string): Promise<StoreShape> => {
     }
     throw err;
   }
-  // ファイルが壊れている / 旧フォーマットの場合は空 store として扱い、次の set で書き直させる。
-  // 認証情報が消えるのは許容範囲 (再 login で復旧)。CLI を起動不能にする方がはるかに痛い。
+  // Treat corrupted / legacy-format files as an empty store and let the next
+  // `set` rewrite them. Losing the saved token is acceptable (the user can re-login),
+  // but failing to start the CLI is much worse.
   try {
     const parsed = JSON.parse(raw) as Partial<StoreShape>;
     if (parsed && parsed.version === 1 && parsed.tokens && typeof parsed.tokens === "object") {
@@ -54,7 +55,7 @@ const writeStore = async (filePath: string, store: StoreShape): Promise<void> =>
   const dir = path.dirname(filePath);
   await ensureDir(dir);
   const tmp = `${filePath}.${process.pid}.tmp`;
-  // 0600 で生成 (Windows では mode は無視される)
+  // Create with 0600 (the mode is ignored on Windows).
   await fs.writeFile(tmp, JSON.stringify(store, null, 2), { encoding: "utf8", mode: 0o600 });
   try {
     await fs.chmod(tmp, 0o600);

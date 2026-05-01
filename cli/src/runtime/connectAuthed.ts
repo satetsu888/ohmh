@@ -20,8 +20,8 @@ import {
 export type RunAuthedOptions = {
   session: ResolvedSession;
   port: number;
-  // null/未指定なら ephemeral webhook を作成 (subscribeEphemeral)。
-  // 指定があれば既存 webhook を購読 (subscribe)。
+  // null = create an ephemeral webhook (subscribeEphemeral).
+  // string = subscribe to an existing webhook by id.
   webhookId: string | null;
 };
 
@@ -80,10 +80,10 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
     try {
       if (activeWebhookId) {
         if (webhookId === null) {
-          // ephemeral: サーバへ unsubscribeEphemeral を送って削除させる
+          // Ephemeral: tell the server to delete the webhook via unsubscribeEphemeral.
           client.unsubscribeEphemeral(activeWebhookId);
         } else {
-          // 既存 webhook: 自分のセッションだけ unsubscribe (webhook は残す)
+          // Existing webhook: only unsubscribe this session; the webhook itself stays.
           client.unsubscribe(activeWebhookId);
         }
       }
@@ -106,11 +106,12 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
     process.exit(1);
   }
 
-  // 接続が確立したら subscribe を送る。
+  // Send the subscribe once the connection is up.
   if (webhookId === null) {
     client.subscribeEphemeral();
   } else {
-    // 既存 webhook を購読。url 表示は subscribe 成功確認 (専用メッセージ無し) の代わりに即時行う。
+    // Subscribe to an existing webhook. There is no dedicated subscribe-ack message,
+    // so print the URL immediately.
     const url = buildWebhookUrl(session.baseUrl, webhookId);
     if (isJsonMode()) {
       emitJsonEvent({
@@ -131,7 +132,7 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
   }
 
   await new Promise<void>(() => {
-    /* never resolves; SIGINT で抜ける */
+    /* never resolves; the process exits via the SIGINT handler */
   });
 };
 

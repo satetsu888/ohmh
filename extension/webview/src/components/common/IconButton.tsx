@@ -2,29 +2,30 @@ import { CSSProperties, MouseEvent } from "react";
 import { useHover } from "../../hooks/useHover";
 
 type Props = {
-  /** codicon-xxx のサフィックス。空文字なら不可視 */
+  /** codicon-xxx suffix; an empty string renders the button invisibly. */
   icon: string;
   title?: string;
-  /** 無効状態の場合は click が呼ばれず、hover も発火しない */
+  /** When true, click and hover are both inert. */
   disabled?: boolean;
-  /** hover していない時の透明度 (default 0.7) */
+  /** Opacity when not hovered (default 0.7). */
   baseOpacity?: number;
-  /** disabled 時の透明度 (default 0.3) */
+  /** Opacity when disabled (default 0.3). */
   disabledOpacity?: number;
   fontSize?: number;
   ariaLabel?: string;
   onClick?: (e: MouseEvent<HTMLSpanElement>) => void;
-  /** 余分な拡張用 (cursor などを上書きしたい時) */
+  /** Extra style overrides (e.g. for cursor). */
   style?: CSSProperties;
-  /** ローディングスピナーとして回す */
+  /** Render as a spinning loading indicator. */
   spinning?: boolean;
-  /** 親が web component の slot を期待する場合に使う (例: VSCodeTextField の slot="end") */
+  /** Set when the parent web component expects a `slot` (e.g. VSCodeTextField's slot="end"). */
   slot?: string;
 };
 
 /**
- * codicon を使うアイコンボタン。hover 状態は useHover で取って、style に宣言的に流し込む。
- * 旧コードで onMouseEnter / onMouseLeave 内で imperative に style を書き換えていた処理を置き換える。
+ * Codicon-based icon button. Hover state is read via useHover and applied
+ * declaratively to `style`, replacing the previous imperative
+ * onMouseEnter / onMouseLeave style mutations.
  */
 export const IconButton = ({
   icon,

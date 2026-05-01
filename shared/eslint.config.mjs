@@ -1,5 +1,6 @@
-// shared/ は VS Code API 非依存ゾーン。extension / CLI など複数クライアントから利用するため
-// vscode をはじめとする VS Code 依存モジュールの import を禁止する。
+// shared/ is a VS Code API-free zone. It is consumed by multiple clients
+// (extension and CLI), so importing `vscode` and other VS Code-only modules
+// is forbidden here.
 import tsParser from "@typescript-eslint/parser";
 
 export default [{

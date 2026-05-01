@@ -1,4 +1,4 @@
-// CLI 全体で扱う典型エラー。process exit code もここで定義する。
+// Common CLI error types. Process exit codes are defined here as well.
 
 export const EXIT_OK = 0;
 export const EXIT_GENERAL_ERROR = 1;

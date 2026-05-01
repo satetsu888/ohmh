@@ -4,7 +4,7 @@ export type ForwardOptions = {
   port: number;
 };
 
-// localhost への forward 結果。サーバへは返さず、ローカル UI 表示のみに使う。
+// Result of forwarding to localhost. Never sent back to the server; consumed by the local UI only.
 export type ForwardResult = {
   status: number | null;
   headers: Record<string, string>;
@@ -22,9 +22,9 @@ const HOP_BY_HOP_HEADERS = new Set([
   "trailer",
   "transfer-encoding",
   "upgrade",
-  // host は fetch が自動付与するため明示的に渡さない
+  // `fetch` injects Host automatically, so don't forward the original.
   "host",
-  // forwarder 側で再構築するため content-length も除外
+  // Content-Length is recomputed by the runtime, so drop the original.
   "content-length",
 ]);
 

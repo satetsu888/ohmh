@@ -26,14 +26,13 @@ const main = async (argv: string[]): Promise<number> => {
     .addOption(new Option("-q, --quiet", "Suppress info-level output").default(false))
     .addOption(new Option("-v, --verbose", "Enable debug output").default(false));
 
-  // 引数なしで `ohmh --port 3000` を受け取れるよう、ルートに connect の Option を生やす。
-  // サブコマンド指定時はサブコマンド側のパースが優先される。
+  // Mirror connect's options on the root so `ohmh --port 3000` works without a subcommand.
+  // Explicit subcommands shadow these (Commander prefers the subcommand parser).
   program
     .option("-p, --port <port>", "Local port to forward to")
     .option("-i, --id <webhookId>", "Subscribe to an existing webhook by id")
     .option("--anonymous", "Force anonymous mode even when authenticated")
     .action(async (_opts, cmd: Command) => {
-      // ルート (= デフォルト) action は connect に委譲する。
       const opts = cmd.optsWithGlobals();
       applyGlobalFlags(opts);
       await connectCommand({

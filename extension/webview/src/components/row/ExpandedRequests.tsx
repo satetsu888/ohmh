@@ -28,7 +28,7 @@ const MessageRow = ({ children }: { children: ReactNode }) => (
 
 const MAX_ROWS = 5;
 
-/** 行が展開されているときの「履歴ローディング / 0件 / 一覧」表示。 */
+/** Renders the "loading / empty / list" view for the expanded request history. */
 export const ExpandedRequests = ({
   loading,
   requests,

@@ -42,7 +42,7 @@ export const connectCommand = async (opts: ConnectOptions): Promise<void> => {
   const config = resolveCliConfig(opts.baseUrlOverride);
 
   if (opts.anonymous) {
-    // 認証済でも明示的に anonymous を強制 (デバッグ用)
+    // Force anonymous mode even when authenticated (useful for debugging).
     await runAnonymousConnect({ baseUrl: config.baseUrl, port });
     return;
   }
@@ -50,12 +50,12 @@ export const connectCommand = async (opts: ConnectOptions): Promise<void> => {
   const session = await tryGetSession(opts.baseUrlOverride);
   if (!session) {
     if (opts.webhookId) {
-      // 既存 webhook の購読は認証必須
+      // Subscribing to an existing webhook requires authentication.
       throw new CliError(
         'subscribing to an existing webhook requires sign-in. Run "ohmh login" first.',
       );
     }
-    // 未認証 + --id 未指定 ⇒ anonymous (確認 prompt なし)
+    // Unauthenticated and no --id ⇒ anonymous mode (no confirm prompt).
     await runAnonymousConnect({ baseUrl: config.baseUrl, port });
     return;
   }

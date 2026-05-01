@@ -5,7 +5,7 @@ type Props = {
   onToggle: () => void;
 };
 
-/** 行頭のチェブロン (展開トグル)。表示は常に同じ。 */
+/** Leading chevron cell that toggles row expansion. Visual is identical regardless of state. */
 export const ExpandToggleCell = ({ expanded, onToggle }: Props) => (
   <VscodeTableCell>
     <div

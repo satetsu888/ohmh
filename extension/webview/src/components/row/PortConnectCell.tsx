@@ -15,7 +15,7 @@ type Props = {
 const isTransitional = (c: Webhook["connection"]) =>
   c === "connecting" || c === "disconnecting";
 
-/** port を入力 → Connect / Disconnect する1セル。状態に応じてアイコンが変わる。 */
+/** Single cell for entering the port and triggering Connect / Disconnect. The icon reflects the current state. */
 export const PortConnectCell = ({
   connection,
   port,
@@ -29,7 +29,7 @@ export const PortConnectCell = ({
   const editable = connection === "disconnected";
   const transitional = isTransitional(connection);
 
-  // どのアイコン/操作を出すかを宣言的に決める
+  // Decide which icon and action to render based on connection state.
   const variant = ((): {
     icon: string;
     title: string;
@@ -54,7 +54,7 @@ export const PortConnectCell = ({
         action: onDisconnect,
       };
     }
-    // disconnected
+    // disconnected.
     return {
       icon: portReady ? "debug-disconnect" : "",
       title: portReady ? "Connect" : "Enter a port to connect",
@@ -89,7 +89,7 @@ export const PortConnectCell = ({
           spinning={variant.spinning}
           onClick={(e) => {
             e.stopPropagation();
-            // フォーカスが port input にあったら外して連打を防ぐ
+            // Blur the port input if it currently has focus, to prevent rapid double-clicks.
             const active = document.activeElement as HTMLElement | null;
             if (active && active.id === inputId) {
               active.blur();

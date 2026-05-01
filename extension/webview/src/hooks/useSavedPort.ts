@@ -6,9 +6,10 @@ import { useExtensionMessage } from "./useExtensionMessage";
 const DEFAULT_PORT = 3000;
 
 /**
- * 認証ユーザの永続 webhook の保存済み port を extension から取得する。
- * - skip=true (例: anonymous webhook) の時は問い合わせず、外部から渡された initial port を保持する。
- * - 取得した値は呼び出し元の state ではなく、この hook が持つ state として返す。
+ * Fetches the saved port for an authenticated user's persistent webhook from the extension.
+ * - When skip=true (e.g. anonymous webhook), the extension is not queried and the
+ *   externally provided `initial` port is kept.
+ * - The resolved value is returned as this hook's own state, not pushed back to the caller.
  */
 export const useSavedPort = (
   vscode: VSCodeApi,
@@ -18,7 +19,7 @@ export const useSavedPort = (
   const { skip = false, fallback = DEFAULT_PORT, initial } = options;
   const [port, setPort] = useState<number | null>(initial ?? fallback);
 
-  // initial / skip の変化に追従
+  // React to changes in initial / skip.
   useEffect(() => {
     if (skip) {
       if (initial !== undefined && initial !== null) {

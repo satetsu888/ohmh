@@ -1,5 +1,5 @@
 // WS protocol shared types between client and server.
-// front 側の app/lib/ws_protocol.ts と内容を一致させる。
+// Must be kept in sync with the server-side definition in app/lib/ws_protocol.ts.
 
 export type ClientType = 'vscode' | 'cli';
 
@@ -22,15 +22,16 @@ export type PongMessage = {
   type: 'pong';
 };
 
-// Anon: クライアントが subscribeAnonymous を送ると、サーバが新規 webhook を作成して
-// id を返す。webhook のライフサイクルはこの WS 接続と同期 (close で消える)。
+// Anon: when the client sends subscribeAnonymous, the server creates a new webhook
+// and returns its id. The webhook's lifecycle is tied to this WS connection
+// (deleted on close).
 export type AnonymousWebhookCreatedMessage = {
   type: 'anonymousWebhookCreated';
   webhookId: string;
 };
 
-// Authed ephemeral: クライアントが subscribeEphemeral を送ると、サーバがそのユーザの
-// ephemeral webhook を作成して id を返す。WS close または unsubscribe で削除される。
+// Authed ephemeral: when the client sends subscribeEphemeral, the server creates
+// the user's ephemeral webhook and returns its id. Deleted on WS close or unsubscribe.
 export type EphemeralWebhookCreatedMessage = {
   type: 'ephemeralWebhookCreated';
   webhookId: string;
@@ -57,7 +58,6 @@ export type SubscribeAnonymousMessage = {
   type: 'subscribeAnonymous';
 };
 
-// Authed セッションが ephemeral webhook を作成・購読するためのメッセージ
 export type SubscribeEphemeralMessage = {
   type: 'subscribeEphemeral';
 };

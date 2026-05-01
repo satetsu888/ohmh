@@ -62,9 +62,9 @@ export const refreshAllExpandedWebhooks = (webhookIds: string[]): Message => {
   };
 };
 
-// WS で受け取ったリクエストを webview のメモリに直接流し込むためのメッセージ。
-// ephemeral / anon はサーバに履歴を持たないので必須、persistent でも届いた時点で
-// 即時表示するために使う (refreshRequestsForWebhook より UX が良い)。
+// Pushes a WS-delivered request straight into the webview's in-memory state.
+// Required for ephemeral / anon (the server has no history for them); used for
+// persistent too so the row appears immediately (better UX than refreshRequestsForWebhook).
 export const webhookRequestReceived = (webhookId: string, request: WebhookSourceRequest): Message => {
   return {
     type: "webhookRequestReceived",
@@ -75,7 +75,7 @@ export const webhookRequestReceived = (webhookId: string, request: WebhookSource
   };
 };
 
-// localhost への forward 結果。サーバには記録せず、webview のローカル状態にだけ反映する。
+// Result of forwarding to localhost. Never persisted on the server; reflected only in the webview's local state.
 export type ForwardResultPayload = {
   status: number | null;
   error: string | null;

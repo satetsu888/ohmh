@@ -25,7 +25,7 @@ export const resendCommand = async (opts: ResendOptions): Promise<void> => {
     opts.requestId,
   );
 
-  // shared/forwarder は RequestMessage 型を期待する。webhookId / sourceRequestId を埋めて渡す。
+  // shared/forwarder expects a RequestMessage; reconstruct one from the source request.
   const requestMessage: RequestMessage = {
     type: "request",
     sourceRequestId: sourceRequest.id,

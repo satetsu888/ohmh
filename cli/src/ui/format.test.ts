@@ -26,7 +26,7 @@ describe("renderTable", () => {
       [{ header: "NAME", get: (r) => r.name, maxWidth: 10 }],
     );
     const lines = out.split("\n");
-    // 末尾に … が付いて 10 文字に収まっていること
+    // Trailing ellipsis brings the cell to exactly 10 characters.
     expect(lines[1]).toBe("this-is-a…");
     expect(lines[1].length).toBe(10);
   });
@@ -39,7 +39,6 @@ describe("renderTable", () => {
 
 describe("formatTimestamp", () => {
   it("formats a Date into YYYY-MM-DD HH:mm:ss in local time", () => {
-    // localtime に依存するので直接月日時分秒の正規表現で検証
     const d = new Date(2026, 3, 29, 14, 5, 9);
     expect(formatTimestamp(d)).toBe("2026-04-29 14:05:09");
   });

@@ -12,8 +12,8 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "../shared/**/*.ts"],
-  // *.test.ts は vitest が単独で transform / 実行する際に import 解決と型チェックを行うため、
-  // cli の `tsc --noEmit` から除外する (shared/*.test.ts から vitest を解決するために
-  // 余計な paths 設定や workspace 化が要らない)。
+  // Vitest transforms and type-checks *.test.ts on its own, so exclude them
+  // from `tsc --noEmit` (this avoids needing extra `paths` or workspace setup
+  // just to resolve vitest from shared/*.test.ts).
   "exclude": ["src/**/*.test.ts", "../shared/**/*.test.ts"]
 }

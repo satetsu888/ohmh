@@ -52,7 +52,7 @@ export const createCommand = async (opts: CreateOptions): Promise<void> => {
   const session = await requireSession(opts.baseUrlOverride);
   const planUrl = `${session.baseUrl}/settings/manage-plan`;
 
-  // 1) options に既に十分な情報があるならそのまま使う
+  // Use the explicit options when they fully specify the webhook to create.
   let kind: "persistent" | "customUrl";
   let customSubdomain: string | undefined;
 
@@ -66,7 +66,7 @@ export const createCommand = async (opts: CreateOptions): Promise<void> => {
   } else if (opts.persistent) {
     kind = "persistent";
   } else if (isInteractive()) {
-    // インタラクティブ選択
+    // Interactive selection.
     const me = await getMe(session.baseUrl, session.token);
     const isPro = me.plan.customSubdomain && me.plan.limits.customUrl > 0;
     const picked = await select<"persistent" | "customUrl">("Choose webhook type", [
@@ -96,7 +96,7 @@ export const createCommand = async (opts: CreateOptions): Promise<void> => {
       customSubdomain = sub;
     }
   } else {
-    // non-TTY: 既定で persistent
+    // Non-TTY: default to persistent.
     kind = "persistent";
   }
 

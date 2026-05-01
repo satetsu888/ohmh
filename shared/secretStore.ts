@@ -1,5 +1,5 @@
-// VS Code 非依存の SecretStore interface.
-// 拡張側は vscode.SecretStorage 実装を、CLI は keytar 実装を注入する。
+// VS Code-agnostic SecretStore interface.
+// The extension injects a vscode.SecretStorage-backed impl; the CLI injects a file-backed impl.
 
 export interface SecretStore {
   get(key: string): Promise<string | undefined>;
