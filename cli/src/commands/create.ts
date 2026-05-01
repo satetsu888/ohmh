@@ -50,7 +50,7 @@ const handleCreateError = (err: unknown, planUrl: string): never => {
 
 export const createCommand = async (opts: CreateOptions): Promise<void> => {
   const session = await requireSession(opts.baseUrlOverride);
-  const planUrl = `${session.baseUrl}/settings/manage-plan`;
+  const planUrl = `${session.baseUrl}/settings`;
 
   // Use the explicit options when they fully specify the webhook to create.
   let kind: "persistent" | "customUrl";

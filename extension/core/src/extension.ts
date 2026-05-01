@@ -88,7 +88,7 @@ const handleCreateWebhookError = async (err: unknown): Promise<void> => {
         "Upgrade Plan",
       );
       if (action === "Upgrade Plan") {
-        const planUrl = `${process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787"}/settings/manage-plan`;
+        const planUrl = `${process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787"}/settings`;
         vscode.env.openExternal(vscode.Uri.parse(planUrl));
       }
       return;
