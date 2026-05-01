@@ -14,10 +14,6 @@ export type RequestMessage = {
   receivedAt: string;
 };
 
-export type AuthExpiredMessage = {
-  type: 'auth_expired';
-};
-
 export type PongMessage = {
   type: 'pong';
 };
@@ -39,7 +35,6 @@ export type EphemeralWebhookCreatedMessage = {
 
 export type ServerMessage =
   | RequestMessage
-  | AuthExpiredMessage
   | PongMessage
   | AnonymousWebhookCreatedMessage
   | EphemeralWebhookCreatedMessage;

@@ -285,25 +285,6 @@ describe("WSClient (authed)", () => {
     expect(ws.sent.find((m) => (m as any).type === "response")).toBeUndefined();
   });
 
-  it("auth_expired triggers refreshAccessToken if provided and forces reconnect", async () => {
-    const refresh = vi.fn(async () => "TKN2");
-    const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
-      clientType: "cli",
-      sessionId: "sess-9",
-      onRequest: onRequestNoop,
-      getAccessToken: async () => "TKN1",
-      refreshAccessToken: refresh,
-    });
-    await client.connect();
-    const ws = MockWebSocket.last();
-    ws.fireOpen();
-
-    ws.fireMessage({ type: "auth_expired" });
-    await vi.advanceTimersByTimeAsync(0);
-    expect(refresh).toHaveBeenCalled();
-  });
-
   it("send() drops messages while disconnected; subscribe replays after reconnect", async () => {
     const client = new WSClient({
       wsUrl: "ws://example.test/ws",

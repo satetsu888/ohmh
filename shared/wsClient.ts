@@ -10,7 +10,6 @@ export type WSClientOptions = {
   wsUrl: string;
   // Not called in anonymous mode.
   getAccessToken?: () => Promise<string>;
-  refreshAccessToken?: () => Promise<string>;
   clientType: ClientType;
   sessionId: string;
   // Locally handle a request received from the server (forward + UI notification).
@@ -233,21 +232,6 @@ export class WSClient extends EventEmitter {
           await this.opts.onRequest(parsed);
         } catch (err) {
           this.emit("error", err);
-        }
-        break;
-      }
-      case "auth_expired": {
-        // Call refreshAccessToken if provided; otherwise just reconnect.
-        try {
-          if (this.opts.refreshAccessToken) {
-            await this.opts.refreshAccessToken();
-          }
-        } catch (err) {
-          this.emit("error", err);
-        }
-        // Close the current connection so the reconnect logic kicks in.
-        if (this.ws) {
-          try { this.ws.close(); } catch { /* ignore */ }
         }
         break;
       }

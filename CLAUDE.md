@@ -23,7 +23,7 @@ ohmh/
 │   └── webview/             # webview UI (React)
 └── shared/                  # client 間で共有するモジュール (vscode 非依存)
     ├── protocol.ts          # WS protocol types
-    ├── wsClient.ts          # WebSocket client (再接続 / auth_expired ハンドリング)
+    ├── wsClient.ts          # WebSocket client (再接続)
     ├── forwarder.ts         # localhost への HTTP 転送
     ├── secretStore.ts       # SecretStore interface
     └── auth/pkce.ts         # PKCE (S256, base64url) ペア / state 生成
@@ -63,7 +63,7 @@ npm run package      # 配布用 .vsix を生成
 - server → client の `request` メッセージのみ。client は forward 結果を server に echo しない (`response` メッセージは存在しない)
 - 認証は `Sec-WebSocket-Protocol: bearer.<token>` の subprotocol で渡す (browser WebSocket がカスタムヘッダを送れないため)
 - anonymous モードは `Sec-WebSocket-Protocol: anonymous` で接続
-- `auth_expired` を受けたら token を refresh して reconnect
+- token 期限切れ時は接続時に 401 が返る (refresh token 機構は未実装。失効通知の push もしない)
 
 ### OAuth + PKCE
 
@@ -106,7 +106,7 @@ ephemeral は REST では作成できず (400 + `reason: "ephemeral_via_ws_only"
 
 ## Important Patterns
 
-1. **Session Management**: token は `SecretStore` に保存し、`auth_expired` を受けたら refresh ではなく再 login を促す
+1. **Session Management**: token は `SecretStore` に保存する。サーバ側で 401 を返された場合は再 login を促す (現状は refresh token 機構なし)
 2. **Error Handling**: ユーザーに可読なメッセージで返す。CLI は exit code を `cli/src/errors.ts` の定数で統一
 3. **Resource Cleanup**: `WSClient` / forwarder は Disposable として扱い、確実に破棄する
 4. **shared/ の依存方向**: shared は vscode を知らない。extension / cli から shared への片方向参照のみ許可
