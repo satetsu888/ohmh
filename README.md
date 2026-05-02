@@ -1,6 +1,6 @@
 # Oh My Hooks Clients
 
-Client implementations for [Oh My Hooks](https://oh-my-hooks.com), a webhook management service that gives you a unique subdomain to receive webhooks and forward them anywhere — including a port on your local machine.
+Client implementations for [Oh My Hooks](https://ohmh.satetsu888.dev), a webhook management service that gives you a unique subdomain to receive webhooks and forward them anywhere — including a port on your local machine.
 
 This repository contains two clients plus the code they share:
 
@@ -8,7 +8,7 @@ This repository contains two clients plus the code they share:
 - **[`extension/`](./extension)** — VS Code extension that integrates webhook management into the editor
 - **[`shared/`](./shared)** — protocol types and runtime modules used by both clients (internal; not published as a package)
 
-The web service (`https://oh-my-hooks.com`) itself is closed source and lives in a separate, private repository.
+The web service (`https://ohmh.satetsu888.dev`) itself is closed source and lives in a separate, private repository.
 
 ## Quick start (CLI)
 

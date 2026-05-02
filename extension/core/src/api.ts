@@ -4,15 +4,14 @@ export type Misc = {
   wsUrl: string;
 };
 
-export type WebhookKind = 'ephemeral' | 'persistent' | 'customUrl';
+export type WebhookKind = 'ephemeral' | 'persistent';
 
 export type Webhook = {
   id: string;
   enabled: boolean;
   destinationUrls: string[];
-  // null = persistent / custom URL, ISO string = ephemeral (24h expiry)
+  // null = persistent, ISO string = ephemeral (24h expiry)
   expiresAt?: string | null;
-  isCustomSubdomain?: boolean;
 };
 
 export type WebhookSourceRequest = {
@@ -28,7 +27,6 @@ export type WebhookSourceRequest = {
 export type PlanLimits = {
   ephemeral: number;
   persistent: number;
-  customUrl: number;
   requestsPerDay: number;
   historyDays: number;
 };
@@ -37,7 +35,6 @@ export type PlanInfo = {
   key: string;
   name: string;
   limits: PlanLimits;
-  customSubdomain: boolean;
 };
 
 export type AccountMe = {
@@ -121,14 +118,23 @@ export const getWebhookRequests = async (
   return data.requests || [];
 };
 
+// Webhook URL は base host の先頭 subdomain を webhook id で置換した形にする
+// (例: https://ohmh.satetsu888.dev + ohmh_abc → https://ohmh_abc.satetsu888.dev/)。
+// hostname に "." が無い (localhost など) 場合は先頭に prepend する。
 export const buildWebhookUrl = (webhookId: string): string => {
-  const url = new URL('/', WEBHOOK_URL_BASE);
-  return url.toString().replace(url.host, `${webhookId}.${url.host}`);
+  const u = new URL('/', WEBHOOK_URL_BASE);
+  const parts = u.hostname.split(".");
+  if (parts.length > 1) {
+    parts[0] = webhookId;
+  } else {
+    parts.unshift(webhookId);
+  }
+  const port = u.port ? `:${u.port}` : "";
+  return `${u.protocol}//${parts.join(".")}${port}/`;
 };
 
 export type CreateWebhookOptions = {
   type: 'ephemeral' | 'persistent';
-  customSubdomain?: string;
 };
 
 export class CreateWebhookError extends Error {
@@ -174,13 +180,10 @@ export const createWebhook = async (
 };
 
 export const classifyWebhook = (
-  webhook: Pick<Webhook, "expiresAt" | "isCustomSubdomain">,
+  webhook: Pick<Webhook, "expiresAt">,
 ): WebhookKind => {
   if (webhook.expiresAt) {
     return 'ephemeral';
-  }
-  if (webhook.isCustomSubdomain) {
-    return 'customUrl';
   }
   return 'persistent';
 };

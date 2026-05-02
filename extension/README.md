@@ -30,7 +30,7 @@ This extension supports different configurations for development and production 
 
 2. Update the values in each file:
    - `.env.development`: Used for local development (default: `http://localhost:8787`)
-   - `.env.production`: Used for production builds (default: `https://oh-my-hooks.com`)
+   - `.env.production`: Used for production builds (default: `https://ohmh.satetsu888.dev`)
 
 3. Use the appropriate build commands:
    ```bash

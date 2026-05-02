@@ -25,7 +25,6 @@ export const buildEphemeralPlaceholder = (): Webhook => ({
   enabled: true,
   destinationUrls: [],
   expiresAt: null,
-  isCustomSubdomain: false,
   connection: 'disconnected',
   localPort: null,
   isEphemeral: true,

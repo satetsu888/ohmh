@@ -4,14 +4,13 @@ import { HttpError } from "./errors";
 // (extension/core/src/api.ts). The extension version depends on
 // vscode.AuthenticationSession, so its code cannot be reused as-is.
 
-export type WebhookKind = "ephemeral" | "persistent" | "customUrl";
+export type WebhookKind = "ephemeral" | "persistent";
 
 export type Webhook = {
   id: string;
   enabled: boolean;
   destinationUrls?: string[];
   expiresAt?: string | null;
-  isCustomSubdomain?: boolean;
   createdAt?: string;
 };
 
@@ -28,7 +27,6 @@ export type WebhookSourceRequest = {
 export type PlanLimits = {
   ephemeral: number;
   persistent: number;
-  customUrl: number;
   requestsPerDay: number;
   historyDays: number;
 };
@@ -37,7 +35,6 @@ export type PlanInfo = {
   key: string;
   name: string;
   limits: PlanLimits;
-  customSubdomain: boolean;
 };
 
 export type AccountMe = {
@@ -53,7 +50,7 @@ export type Misc = {
 };
 
 export type CreateWebhookOptions =
-  | { type: "persistent"; customSubdomain?: string }
+  | { type: "persistent" }
   | { type: "ephemeral" };
 
 export class CreateWebhookError extends HttpError {
@@ -210,12 +207,9 @@ export const exchangeAuthorizationCode = async (
   return (await res.json()) as { accessToken: string };
 };
 
-export const classifyWebhook = (w: Pick<Webhook, "expiresAt" | "isCustomSubdomain">): WebhookKind => {
+export const classifyWebhook = (w: Pick<Webhook, "expiresAt">): WebhookKind => {
   if (w.expiresAt) {
     return "ephemeral";
-  }
-  if (w.isCustomSubdomain) {
-    return "customUrl";
   }
   return "persistent";
 };

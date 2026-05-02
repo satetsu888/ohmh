@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Oh My Hooks のクライアント実装群を管理するリポジトリ。Web サービス本体 (`https://oh-my-hooks.com`) のサーバ側コードは別 (private) リポジトリで管理される。
+Oh My Hooks のクライアント実装群を管理するリポジトリ。Web サービス本体 (`https://ohmh.satetsu888.dev`) のサーバ側コードは別 (private) リポジトリで管理される。
 
 提供するクライアントは 2 つ:
 
@@ -89,18 +89,16 @@ npm run package      # 配布用 .vsix を生成
 |---|---|---|---|
 | **ephemeral** | WS セッションに紐付き、disconnect / unsubscribe で消える (24h TTL は保険) | WS `subscribeEphemeral` (authed) / `subscribeAnonymous` (anon) | なし |
 | **persistent** | 無期限 | REST `POST /api/webhooks { type: "persistent" }` | あり (resend 可能) |
-| **custom URL** | 無期限 | REST `POST /api/webhooks { customSubdomain }` (Pro のみ) | あり (persistent と同じ) |
 
 ephemeral は REST では作成できず (400 + `reason: "ephemeral_via_ws_only"`)、必ず WS 経由で作成される。
 
 ## Subscription Tiers (UI 表示用の参照値)
 
-| Plan | Price | ephemeral | persistent | custom URL | requests/day |
-|---|---|---|---|---|---|
-| Anonymous | $0 | 1 | 0 | 0 | 100 |
-| Free | $0 | 1 | 0 | 0 | 100 |
-| Basic | $1.98/mo | 1 | 1 | 0 | 500 |
-| Pro | $9.98/mo | 1 | 5 | 1 | 5,000 |
+| Plan | Price | ephemeral | persistent | requests/day |
+|---|---|---|---|---|
+| Anonymous | $0 | 1 | 0 | 100 |
+| Free | $0 | 1 | 0 | 100 |
+| Basic | $1.98/mo | 1 | 1 | 500 |
 
 > 真の source of truth はサーバ側 (`app/lib/subscription.server.ts`) のため、ここの数値はあくまで client UI 表示用の参考値。乖離していたらサーバを信頼する。
 

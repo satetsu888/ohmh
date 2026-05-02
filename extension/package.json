@@ -1,8 +1,9 @@
 {
-  "name": "oh-my-hooks",
-  "displayName": "oh-my-hooks",
+  "name": "ohmh",
+  "displayName": "Oh My Hooks",
   "description": "webhook manager",
   "version": "0.0.1",
+  "publisher": "satetsu888",
   "engines": {
     "vscode": "^1.94.0"
   },

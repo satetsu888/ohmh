@@ -19,7 +19,7 @@ import { PromiseAdapter, promiseFromEvent } from "../util";
 import { createPkcePair, generateState } from "../../../../shared/auth/pkce";
 
 const CLIENT_ID = "oh-my-hooks-extension";
-const REDIRECT_URI = "vscode://undefined_publisher.oh-my-hooks";
+const REDIRECT_URI = "vscode://satetsu888.ohmh";
 const SESSIONS_SECRET_KEY = "oh-my-hooks-sessions";
 const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787";
 

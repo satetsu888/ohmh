@@ -1,6 +1,6 @@
 # ohmh
 
-CLI client for [Oh My Hooks](https://oh-my-hooks.com). Receive webhooks at a unique URL and forward them to a local port without installing anything globally.
+CLI client for [Oh My Hooks](https://ohmh.satetsu888.dev). Receive webhooks at a unique URL and forward them to a local port without installing anything globally.
 
 ## Quick start
 
@@ -9,7 +9,7 @@ CLI client for [Oh My Hooks](https://oh-my-hooks.com). Receive webhooks at a uni
 npx ohmh --port 3000
 ```
 
-The first connection uses an anonymous ephemeral webhook — great for one-off testing. Run `ohmh login` to use a persistent or custom-subdomain URL tied to your account.
+The first connection uses an anonymous ephemeral webhook — great for one-off testing. Run `ohmh login` to use a persistent URL tied to your account.
 
 ## Commands
 
@@ -20,8 +20,8 @@ The first connection uses an anonymous ephemeral webhook — great for one-off t
 | `ohmh login` | ブラウザを開いて OAuth (PKCE) でサインイン、access token を保存する |
 | `ohmh logout` | 保存された access token を破棄する |
 | `ohmh whoami` | サインイン中のユーザーとプランを表示 |
-| `ohmh list` | 自分の webhook (persistent / custom URL) を一覧表示 |
-| `ohmh create [--persistent] [--custom <subdomain>]` | webhook を作成する。`--custom` は Pro プラン限定 |
+| `ohmh list` | 自分の persistent webhook を一覧表示 |
+| `ohmh create` | persistent webhook を作成する |
 | `ohmh delete <id> [--yes]` | webhook を削除する |
 | `ohmh requests <id> [--limit <n>] [--offset <n>]` | persistent webhook の受信履歴を表示する (default limit=20) |
 | `ohmh request <id> <reqId>` | 1 件のリクエストの全 headers / body を表示する |
@@ -29,7 +29,7 @@ The first connection uses an anonymous ephemeral webhook — great for one-off t
 
 すべてのコマンドで以下のグローバルオプションが使える:
 
-- `--base-url <url>` (env: `OH_MY_HOOKS_BASE_URL`) — API ベース URL を上書き (デフォルト `https://oh-my-hooks.com`)
+- `--base-url <url>` (env: `OH_MY_HOOKS_BASE_URL`) — API ベース URL を上書き (デフォルト `https://ohmh.satetsu888.dev`)
 - `--json` — NDJSON 形式の機械可読出力に切り替える
 - `-q, --quiet` — info レベルの出力を抑制
 - `-v, --verbose` — debug 出力を有効化

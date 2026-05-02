@@ -5,8 +5,8 @@ describe("renderTable", () => {
   it("renders header and rows with column padding", () => {
     const out = renderTable(
       [
-        { id: "wh_a", kind: "persistent" },
-        { id: "wh_xyz", kind: "ephemeral" },
+        { id: "ohmh_a", kind: "persistent" },
+        { id: "ohmh_xyz", kind: "ephemeral" },
       ],
       [
         { header: "ID", get: (r) => r.id },
@@ -15,9 +15,9 @@ describe("renderTable", () => {
     );
     const lines = out.split("\n");
     expect(lines).toHaveLength(3);
-    expect(lines[0]).toBe("ID      KIND");
-    expect(lines[1]).toBe("wh_a    persistent");
-    expect(lines[2]).toBe("wh_xyz  ephemeral");
+    expect(lines[0]).toBe("ID        KIND");
+    expect(lines[1]).toBe("ohmh_a    persistent");
+    expect(lines[2]).toBe("ohmh_xyz  ephemeral");
   });
 
   it("truncates cells exceeding maxWidth with an ellipsis", () => {

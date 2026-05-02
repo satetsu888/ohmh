@@ -99,7 +99,7 @@ VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `fo
 
 ### Webhook Kinds (kind awareness in the extension)
 
-The server defines three webhook kinds (see project root `/CLAUDE.md`): **ephemeral** (session-scoped, no server-side storage), **persistent** (indefinite, full storage), **custom URL** (persistent + Pro-chosen subdomain). Per-plan slot counts are enforced server-side.
+The server defines two webhook kinds (see project root `/CLAUDE.md`): **ephemeral** (session-scoped, no server-side storage) and **persistent** (indefinite, full storage). Per-plan slot counts are enforced server-side.
 
 #### Ephemeral webhook (placeholder + Connect on demand)
 
@@ -107,17 +107,13 @@ The webhook list always shows a single **ephemeral placeholder** entry at the to
 
 **Ephemeral webhooks are never created via REST** — `POST /api/webhooks { type: "ephemeral" }` returns 400. The list endpoint also filters them out so other VS Code windows do not see each other's ephemerals.
 
-#### Persistent / Custom URL webhook creation dialog
+#### Persistent webhook creation
 
-`oh-my-hooks.createWebhook` (command palette) is for **persistent** and **custom URL** webhooks only. The dialog uses `vscode.window.showQuickPick`:
-1. "Persistent webhook" — slot count from the plan
-2. "Custom URL webhook" — disabled with "Custom URL requires the Pro plan" for non-Pro users; on selection, prompts for a subdomain via `showInputBox` with the same validation as the server (3-20 lowercase alphanumerics)
-
-The dialog POSTs `/api/webhooks` with `{ type: 'persistent', customSubdomain?: string }` and surfaces 402 responses (with `kind` in the body) as plan-limit messages.
+`oh-my-hooks.createWebhook` (command palette) creates a persistent webhook directly via `POST /api/webhooks { type: 'persistent' }`. 402 responses (with `kind` in the body) are surfaced as plan-limit messages.
 
 #### Webhook list kind badge
 
-Each row renders a kind badge (Ephemeral / Persistent / Custom URL) via `WebhookKindBadge`, derived from `expiresAt` and `isCustomSubdomain`.
+Each row renders a kind badge (Ephemeral / Persistent) via `WebhookKindBadge`, derived from `expiresAt`.
 
 ### Anonymous Webhooks
 

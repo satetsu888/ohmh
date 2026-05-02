@@ -19,7 +19,7 @@ const main = async (argv: string[]): Promise<number> => {
 
   program
     .name("ohmh")
-    .description("Forward webhooks from oh-my-hooks.com to your local dev server")
+    .description("Forward webhooks from ohmh.satetsu888.dev to your local dev server")
     .version(VERSION, "-V, --version")
     .addOption(new Option("--base-url <url>", "Override base URL (env: OH_MY_HOOKS_BASE_URL)"))
     .addOption(new Option("--json", "Emit machine-readable NDJSON output").default(false))
@@ -98,15 +98,11 @@ const main = async (argv: string[]): Promise<number> => {
 
   program
     .command("create")
-    .description("Create a persistent or custom URL webhook")
-    .option("--persistent", "Create a persistent webhook (default)")
-    .option("--custom <subdomain>", "Create a custom URL webhook (Pro plan)")
-    .action(async (opts, cmd: Command) => {
+    .description("Create a persistent webhook")
+    .action(async (_opts, cmd: Command) => {
       const merged = cmd.optsWithGlobals();
       applyGlobalFlags(merged);
       await createCommand({
-        persistent: Boolean(opts.persistent),
-        custom: typeof opts.custom === "string" ? opts.custom : undefined,
         baseUrlOverride: merged.baseUrl,
       });
     });

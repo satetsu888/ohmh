@@ -11,7 +11,6 @@ export type ListOptions = {
 const KIND_LABEL: Record<string, string> = {
   ephemeral: "ephemeral",
   persistent: "persistent",
-  customUrl: "custom URL",
 };
 
 export const listCommand = async (opts: ListOptions): Promise<void> => {

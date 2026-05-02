@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 
-const DEFAULT_BASE_URL = "https://oh-my-hooks.com";
+const DEFAULT_BASE_URL = "https://ohmh.satetsu888.dev";
 
 export type CliConfig = {
   baseUrl: string;
@@ -49,7 +49,17 @@ export const buildWsUrl = (baseUrl: string): string => {
   return baseUrl.replace(/^http/, "ws") + "/ws";
 };
 
+// Webhook URL は base host の先頭 subdomain を webhook id で置換した形にする
+// (例: https://ohmh.satetsu888.dev + ohmh_abc → https://ohmh_abc.satetsu888.dev/)。
+// hostname に "." が無い (localhost など) 場合は先頭に prepend する。
 export const buildWebhookUrl = (baseUrl: string, webhookId: string): string => {
   const u = new URL("/", baseUrl);
-  return u.toString().replace(u.host, `${webhookId}.${u.host}`);
+  const parts = u.hostname.split(".");
+  if (parts.length > 1) {
+    parts[0] = webhookId;
+  } else {
+    parts.unshift(webhookId);
+  }
+  const port = u.port ? `:${u.port}` : "";
+  return `${u.protocol}//${parts.join(".")}${port}/`;
 };

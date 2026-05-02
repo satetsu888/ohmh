@@ -102,7 +102,7 @@ describe("FileSecretStore", () => {
 
 describe("tokenKeyFor", () => {
   it("uses the BASE_URL as the disambiguating part of the key", () => {
-    expect(tokenKeyFor("https://oh-my-hooks.com")).toBe("token:https://oh-my-hooks.com");
+    expect(tokenKeyFor("https://ohmh.satetsu888.dev")).toBe("token:https://ohmh.satetsu888.dev");
     expect(tokenKeyFor("http://localhost:8787")).toBe("token:http://localhost:8787");
   });
 });

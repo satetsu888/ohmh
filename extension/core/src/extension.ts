@@ -9,76 +9,10 @@ import { WSClient } from "../../../shared/wsClient";
 import { forward } from "../../../shared/forwarder";
 import { RequestMessage } from "../../../shared/protocol";
 
-// 3-20 lowercase alphanumerics; reject keys starting with the auto-id prefix
-const CUSTOM_SUBDOMAIN_RE = /^[a-z0-9]{3,20}$/;
-const CUSTOM_SUBDOMAIN_AUTO_PREFIX = "wh_";
-
-const validateCustomSubdomainInput = (value: string): string | undefined => {
-  if (!CUSTOM_SUBDOMAIN_RE.test(value)) {
-    return "Subdomain must be 3-20 lowercase alphanumeric characters";
-  }
-  if (value.startsWith(CUSTOM_SUBDOMAIN_AUTO_PREFIX)) {
-    return `Subdomain must not start with "${CUSTOM_SUBDOMAIN_AUTO_PREFIX}"`;
-  }
-  return undefined;
-};
-
-// QuickPick dialog used by the "create webhook" flow. Returns undefined on cancel.
-// Ephemeral webhooks are not handled here; they are issued via the placeholder's Connect button.
-const pickWebhookOptions = async (
-  me: api.AccountMe,
-): Promise<api.CreateWebhookOptions | undefined> => {
-  const isPro = me.plan.customSubdomain && me.plan.limits.customUrl > 0;
-
-  type Item = vscode.QuickPickItem & { value: 'persistent' | 'customUrl' };
-  const items: Item[] = [
-    {
-      label: "Persistent webhook",
-      description: `${me.plan.limits.persistent} slot(s) on ${me.plan.name}`,
-      detail: "Indefinite lifetime, server-side history",
-      value: 'persistent',
-    },
-    {
-      label: isPro ? "Custom URL webhook" : "Custom URL webhook (Pro plan required)",
-      description: isPro ? "1 slot on Pro" : "Custom URL requires the Pro plan",
-      detail: "Pick your own subdomain (3-20 lowercase alphanumerics)",
-      value: 'customUrl',
-    },
-  ];
-
-  const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: "Choose webhook type",
-    canPickMany: false,
-  });
-  if (!picked) {
-    return undefined;
-  }
-
-  if (picked.value === 'customUrl') {
-    if (!isPro) {
-      vscode.window.showWarningMessage("Custom URL requires the Pro plan. Please upgrade to use this feature.");
-      return undefined;
-    }
-    const subdomain = await vscode.window.showInputBox({
-      prompt: "Custom subdomain (3-20 lowercase alphanumerics)",
-      placeHolder: "myhook",
-      validateInput: (v) => validateCustomSubdomainInput(v.trim()),
-    });
-    if (!subdomain) {
-      return undefined;
-    }
-    return { type: 'persistent', customSubdomain: subdomain.trim() };
-  }
-
-  return { type: picked.value };
-};
-
 const handleCreateWebhookError = async (err: unknown): Promise<void> => {
   if (err instanceof api.CreateWebhookError) {
     if (err.status === 402) {
-      const message = err.kind === 'customUrl'
-        ? "You have reached your custom URL slot limit on this plan."
-        : err.kind === 'persistent'
+      const message = err.kind === 'persistent'
         ? "You have reached your persistent webhook limit on this plan."
         : err.kind === 'ephemeral'
         ? "You have reached your ephemeral webhook limit on this plan."
@@ -363,7 +297,7 @@ export async function activate(context: vscode.ExtensionContext) {
             break;
           }
 
-          // Normal persistent / customUrl webhook.
+          // Normal persistent webhook.
           const webhook = stateStore.getWebhookById(targetId);
           if (!webhook) {
             vscode.window.showErrorMessage("Webhook not found");
@@ -560,29 +494,13 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        // Fetch the current plan to decide whether custom URL is allowed.
-        let me: api.AccountMe;
-        try {
-          me = await api.getMe(session);
-        } catch (err) {
-          vscode.window.showErrorMessage(
-            `Failed to fetch plan info: ${err instanceof Error ? err.message : String(err)}`,
-          );
-          return;
-        }
-
-        const opts = await pickWebhookOptions(me);
-        if (!opts) {
-          return; // user cancelled
-        }
-
         vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
           title: "Creating new webhook...",
           cancellable: false,
         }, async () => {
           try {
-            await api.createWebhook(session, opts);
+            await api.createWebhook(session, { type: 'persistent' });
             vscode.window.showInformationMessage("New webhook created successfully");
             await stateStore.fetchWebhooks();
           } catch (err) {

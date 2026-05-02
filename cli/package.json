@@ -1,7 +1,7 @@
 {
   "name": "ohmh",
   "version": "0.1.0",
-  "description": "Forward webhooks from oh-my-hooks.com to your local dev server.",
+  "description": "Forward webhooks from ohmh.satetsu888.dev to your local dev server.",
   "license": "MIT",
   "bin": {
     "ohmh": "dist/ohmh.js"
@@ -13,7 +13,7 @@
   "engines": {
     "node": ">=20"
   },
-  "homepage": "https://oh-my-hooks.com",
+  "homepage": "https://ohmh.satetsu888.dev",
   "repository": {
     "type": "git",
     "url": "https://github.com/satetsu888/oh-my-hooks",

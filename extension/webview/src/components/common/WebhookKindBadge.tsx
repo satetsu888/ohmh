@@ -4,13 +4,11 @@ import { Webhook } from "../../../../core/src/stateStore";
 const labelByKind: Record<WebhookKind, string> = {
   ephemeral: "Ephemeral",
   persistent: "Persistent",
-  customUrl: "Custom URL",
 };
 
 const colorByKind: Record<WebhookKind, string> = {
   ephemeral: "var(--vscode-charts-yellow, #cca700)",
   persistent: "var(--vscode-charts-blue, #3794ff)",
-  customUrl: "var(--vscode-charts-purple, #b180d7)",
 };
 
 type Props = {

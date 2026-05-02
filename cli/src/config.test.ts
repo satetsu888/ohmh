@@ -34,7 +34,7 @@ describe("resolveBaseUrl", () => {
   });
 
   it("falls back to the default base URL when neither is set", () => {
-    expect(resolveBaseUrl()).toBe("https://oh-my-hooks.com");
+    expect(resolveBaseUrl()).toBe("https://ohmh.satetsu888.dev");
   });
 
   it("trims trailing slashes", () => {
@@ -89,19 +89,20 @@ describe("buildWsUrl", () => {
   });
 
   it("rewrites https -> wss and appends /ws", () => {
-    expect(buildWsUrl("https://oh-my-hooks.com")).toBe("wss://oh-my-hooks.com/ws");
+    expect(buildWsUrl("https://ohmh.satetsu888.dev")).toBe("wss://ohmh.satetsu888.dev/ws");
   });
 });
 
 describe("buildWebhookUrl", () => {
-  it("prepends the webhook id as a subdomain", () => {
-    expect(buildWebhookUrl("https://oh-my-hooks.com", "wh_abc")).toBe(
-      "https://wh_abc.oh-my-hooks.com/",
+  it("replaces the leading subdomain of the base host with the webhook id", () => {
+    expect(buildWebhookUrl("https://ohmh.satetsu888.dev", "ohmh_abc")).toBe(
+      "https://ohmh_abc.satetsu888.dev/",
     );
   });
 
-  it("works for localhost / non-default ports", () => {
-    const got = buildWebhookUrl("http://localhost:8787", "wh_xyz");
-    expect(got).toBe("http://wh_xyz.localhost:8787/");
+  it("prepends the webhook id when the host has no subdomain (localhost / non-default ports)", () => {
+    expect(buildWebhookUrl("http://localhost:8787", "ohmh_xyz")).toBe(
+      "http://ohmh_xyz.localhost:8787/",
+    );
   });
 });
