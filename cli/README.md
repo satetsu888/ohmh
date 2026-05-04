@@ -53,4 +53,4 @@ npm run dev           # tsup --watch
 
 ## License
 
-MIT — see [LICENSE](../LICENSE).
+MIT — see [LICENSE](./LICENSE).

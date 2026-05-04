@@ -16,17 +16,17 @@
   "homepage": "https://ohmh.satetsu888.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/satetsu888/oh-my-hooks",
+    "url": "git+https://github.com/satetsu888/ohmh.git",
     "directory": "cli"
   },
   "bugs": {
-    "url": "https://github.com/satetsu888/oh-my-hooks/issues"
+    "url": "https://github.com/satetsu888/ohmh/issues"
   },
   "keywords": [
     "webhook",
     "tunnel",
     "forward",
-    "oh-my-hooks"
+    "ohmh"
   ],
   "scripts": {
     "build": "tsup",
