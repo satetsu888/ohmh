@@ -1,95 +1,50 @@
-# oh-my-hooks README
+# Oh My Hooks
 
-This is the README for your extension "oh-my-hooks". After writing up a brief description, we recommend including the following sections.
+Receive webhooks at a unique public URL and forward them to a local port — without leaving VS Code.
 
-## Features
+Test webhooks from third-party services (Stripe, GitHub, Slack, …) on your laptop without exposing it to the internet. Oh My Hooks gives you a public URL, streams incoming requests over WebSocket, and forwards them to `http://localhost:<port>` of your choice. The forwarded response stays local — nothing about your local server is sent back to the cloud.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## Quick start
 
-For example if there is an image subfolder under your extension project workspace:
+1. Open the **Oh My Hooks** panel from the bottom panel area of VS Code.
+2. Click **Sign in** to authenticate via your browser (GitHub OAuth). Or skip sign-in: click **Connect** on the anonymous row to try an ephemeral URL with no account.
+3. Enter your local port (e.g. `3000`) and **Connect**. A unique webhook URL like `https://ohmh_xxx.satetsu888.dev/` appears.
+4. Point a webhook source (Stripe, GitHub, …) at that URL. Incoming requests are forwarded to `http://localhost:<port>` and shown in the panel with method / status / duration.
 
-\!\[feature X\]\(images/feature-x.png\)
+## Webhook types
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+| Kind | Lifetime | How to create |
+|---|---|---|
+| **Ephemeral** | While the connection is open (24h server-side TTL as a safety net) | Connect on the ephemeral row in the panel (auto-created) |
+| **Persistent** | Indefinite; request history kept on the server | `Oh My Hooks: Create New Webhook` from the command palette |
 
-## Requirements
+Anonymous mode produces an ephemeral webhook that is **deleted on disconnect** — no history, no account required.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Plans
 
-## Development
+| Plan | Price | Ephemeral | Persistent | Requests / day | History |
+|---|---|---|---|---|---|
+| Anonymous | $0 | 1 | 0 | 100 | none |
+| Free | $0 | 1 | 0 | 100 | none |
+| Basic | $1.98 / mo | 1 | 1 | 500 | 30 days |
 
-### Environment Configuration
+Manage your plan at [ohmh.satetsu888.dev/settings](https://ohmh.satetsu888.dev/settings) or via the command palette: `Oh My Hooks: Open Settings`.
 
-This extension supports different configurations for development and production environments.
+## Commands
 
-1. Copy `.env.example` to create environment-specific configuration files:
-   ```bash
-   cp .env.example .env.development
-   cp .env.example .env.production
-   ```
+| Command | Description |
+|---|---|
+| `Oh My Hooks: Create New Webhook` | Create a persistent webhook tied to your account |
+| `Oh My Hooks: Open Settings` | Open the web settings page (plan / billing) |
 
-2. Update the values in each file:
-   - `.env.development`: Used for local development (default: `http://localhost:8787`)
-   - `.env.production`: Used for production builds (default: `https://ohmh.satetsu888.dev`)
+## Companion CLI
 
-3. Use the appropriate build commands:
-   ```bash
-   npm run compile:dev    # Development build
-   npm run compile:prod   # Production build
-   npm run watch          # Watch mode with development config
-   npm run package        # Production package
-   ```
+Prefer a terminal? The same service ships with [`ohmh`](https://www.npmjs.com/package/ohmh) — a zero-install Node CLI:
 
-## Extension Settings
+```bash
+npx ohmh --port 3000
+```
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## License
 
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT

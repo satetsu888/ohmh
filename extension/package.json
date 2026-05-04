@@ -54,11 +54,13 @@
       {
         "command": "ohmh.createWebhook",
         "title": "Create New Webhook",
+        "category": "Oh My Hooks",
         "icon": "$(add)"
       },
       {
         "command": "ohmh.openSettings",
         "title": "Open Settings",
+        "category": "Oh My Hooks",
         "icon": "$(settings-gear)"
       }
     ],
