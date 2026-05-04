@@ -2,9 +2,31 @@
 
 'use strict';
 
+const fs = require('node:fs');
 const path = require('path');
 const webpack = require("webpack");
 const dotenv = require('dotenv');
+
+// codicon.css / codicon.ttf を dist/codicons/ に複製する。
+// vsce package --no-dependencies + .vscodeignore で node_modules が
+// 除外されるため、webview から参照できるよう dist 配下へ運び込む。
+class CopyCodiconsPlugin {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tapAsync('CopyCodiconsPlugin', (_compilation, cb) => {
+      try {
+        const src = path.resolve(__dirname, 'webview/node_modules/@vscode/codicons/dist');
+        const dst = path.resolve(__dirname, 'dist/codicons');
+        fs.mkdirSync(dst, { recursive: true });
+        for (const f of ['codicon.css', 'codicon.ttf']) {
+          fs.copyFileSync(path.join(src, f), path.join(dst, f));
+        }
+        cb();
+      } catch (e) {
+        cb(e);
+      }
+    });
+  }
+}
 
 // Load environment variables based on NODE_ENV
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
@@ -80,6 +102,10 @@ const webviewConfig = {
     libraryTarget: "module",
     chunkFormat: "module",
   },
+  plugins: [
+    ...baseConfig.plugins,
+    new CopyCodiconsPlugin(),
+  ],
 };
 
 module.exports = [ extensionConfig, webviewConfig ];

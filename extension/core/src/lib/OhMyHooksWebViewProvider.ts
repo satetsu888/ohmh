@@ -38,11 +38,8 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
       "webview.js",
     ]);
     const codiconsUri = this.getUri(webview, this._extensionUri, [
-      "webview",
-      "node_modules",
-      "@vscode",
-      "codicons",
       "dist",
+      "codicons",
       "codicon.css",
     ]);
     const nonce = this.getNonce();
