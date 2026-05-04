@@ -1,9 +1,26 @@
 {
   "name": "ohmh",
   "displayName": "Oh My Hooks",
-  "description": "webhook manager",
-  "version": "0.0.1",
+  "description": "Receive webhooks at a unique URL and forward them to a local port from VS Code.",
+  "version": "0.1.0",
   "publisher": "satetsu888",
+  "license": "MIT",
+  "homepage": "https://ohmh.satetsu888.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satetsu888/ohmh.git",
+    "directory": "extension"
+  },
+  "bugs": {
+    "url": "https://github.com/satetsu888/ohmh/issues"
+  },
+  "icon": "resources/icon.png",
+  "keywords": [
+    "webhook",
+    "tunnel",
+    "forward",
+    "ohmh"
+  ],
   "engines": {
     "vscode": "^1.94.0"
   },
@@ -16,17 +33,17 @@
     "viewsContainers": {
       "panel": [
         {
-          "id": "oh-my-hooks-panel",
+          "id": "ohmh-panel",
           "title": "Oh My Hooks",
-          "icon": "resources/package-explorer.svg"
+          "icon": "resources/panel.svg"
         }
       ]
     },
     "views": {
-      "oh-my-hooks-panel": [
+      "ohmh-panel": [
         {
           "type": "webview",
-          "id": "oh-my-hooks-webview",
+          "id": "ohmh-webview",
           "name": "Oh My Hooks",
           "canToggleVisibility": true,
           "visibility": "visible"
@@ -35,12 +52,12 @@
     },
     "commands": [
       {
-        "command": "oh-my-hooks.createWebhook",
+        "command": "ohmh.createWebhook",
         "title": "Create New Webhook",
         "icon": "$(add)"
       },
       {
-        "command": "oh-my-hooks.openSettings",
+        "command": "ohmh.openSettings",
         "title": "Open Settings",
         "icon": "$(settings-gear)"
       }
@@ -48,25 +65,26 @@
     "menus": {
       "view/title": [
         {
-          "command": "oh-my-hooks.createWebhook",
-          "when": "view == oh-my-hooks-webview",
+          "command": "ohmh.createWebhook",
+          "when": "view == ohmh-webview",
           "group": "navigation"
         },
         {
-          "command": "oh-my-hooks.openSettings",
-          "when": "view == oh-my-hooks-webview",
+          "command": "ohmh.openSettings",
+          "when": "view == ohmh-webview",
           "group": "navigation"
         }
       ]
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "NODE_ENV=production webpack --mode production --devtool hidden-source-map",
     "compile": "webpack",
     "compile:dev": "NODE_ENV=development webpack",
     "compile:prod": "NODE_ENV=production webpack --mode production",
     "watch": "NODE_ENV=development webpack --watch",
-    "package": "NODE_ENV=production webpack --mode production --devtool hidden-source-map",
+    "package": "vsce package --no-dependencies",
+    "publish": "vsce publish",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
@@ -84,6 +102,7 @@
     "@typescript-eslint/parser": "^8.7.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.0.0",
     "dotenv": "^17.2.0",
     "eslint": "^9.11.1",
     "ts-loader": "^9.5.1",

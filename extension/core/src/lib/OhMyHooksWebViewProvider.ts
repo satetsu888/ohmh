@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
 
 class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = "oh-my-hooks-webview";
+  public static readonly viewType = "ohmh-webview";
 
   private _view?: vscode.WebviewView;
 

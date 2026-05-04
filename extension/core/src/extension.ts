@@ -486,7 +486,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('oh-my-hooks.createWebhook', async () => {
+    vscode.commands.registerCommand('ohmh.createWebhook', async () => {
       try {
         const session = await stateStore.getSession();
         if (!session) {
@@ -516,7 +516,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('oh-my-hooks.openSettings', () => {
+    vscode.commands.registerCommand('ohmh.openSettings', () => {
       const settingsUrl = `${process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787"}/settings`;
       vscode.env.openExternal(vscode.Uri.parse(settingsUrl));
     })
