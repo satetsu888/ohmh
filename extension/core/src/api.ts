@@ -56,12 +56,19 @@ const authHeader = (session: vscode.AuthenticationSession) => ({
   },
 });
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export const getMisc = async (
   session: vscode.AuthenticationSession
 ): Promise<Misc> => {
   const res = await fetch(`${API_URL_BASE}/misc`, authHeader(session));
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw new ApiError(res.statusText, res.status);
   }
 
   return (await res.json()) as Misc;
@@ -72,7 +79,7 @@ export const getMe = async (
 ): Promise<AccountMe> => {
   const res = await fetch(`${API_URL_BASE}/account/me`, authHeader(session));
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw new ApiError(res.statusText, res.status);
   }
   return (await res.json()) as AccountMe;
 };
@@ -82,7 +89,7 @@ export const getWebhooks = async (
 ): Promise<Webhook[]> => {
   const res = await fetch(`${API_URL_BASE}/webhooks`, authHeader(session));
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw new ApiError(res.statusText, res.status);
   }
 
   return (await res.json()).webhooks as Webhook[];
@@ -95,7 +102,7 @@ export const getWebhookSourceRequest = async (session: vscode.AuthenticationSess
     ...authHeader(session),
   });
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw new ApiError(res.statusText, res.status);
   }
 
   return await res.json() as WebhookSourceRequest;
@@ -111,7 +118,7 @@ export const getWebhookRequests = async (
     ...authHeader(session),
   });
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw new ApiError(res.statusText, res.status);
   }
 
   const data = await res.json();

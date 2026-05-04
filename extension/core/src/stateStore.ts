@@ -36,12 +36,17 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
   private _isGuestMode = false;
   private _disposables: vscode.Disposable[] = [];
   private _context: vscode.ExtensionContext | null = null;
+  private _onSessionInvalidated: (() => Promise<void>) | null = null;
   private readonly PORT_STORAGE_KEY = 'oh-my-hooks.webhookPorts';
   private readonly GUEST_MODE_PREF_KEY = 'oh-my-hooks.guestModePref';
 
-  public constructor (context?: vscode.ExtensionContext) {
+  public constructor (
+    context?: vscode.ExtensionContext,
+    onSessionInvalidated?: () => Promise<void>,
+  ) {
     super();
     this._context = context || null;
+    this._onSessionInvalidated = onSessionInvalidated || null;
     this._disposables.push(
       vscode.authentication.onDidChangeSessions(this.onDidChangeSessions)
     );
@@ -214,6 +219,21 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
     this.emit('statusChanged', this.get());
   }
 
+  // 401 が返った時の共通処理。in-memory state を消し、secrets 側の stale
+  // session も purge して、再 throw はしない (呼び出し側はログイン画面に戻す
+  // だけでよい)。それ以外のエラーはそのまま rethrow する。
+  private async handleApiError(err: unknown): Promise<void> {
+    if (err instanceof api.ApiError && err.status === 401) {
+      this.clearSessionAndEmit();
+      if (this._onSessionInvalidated) {
+        await this._onSessionInvalidated();
+      }
+      return;
+    }
+    this.clearSessionAndEmit();
+    throw err;
+  }
+
   public async fetchMisc() {
     if (!this._session) {
       return;
@@ -224,9 +244,8 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
       this.emit('statusChanged', this.get());
       return miscResponse;
     } catch (err) {
-      // On API failure, clear session to show sign-in button
-      this.clearSessionAndEmit();
-      throw err;
+      await this.handleApiError(err);
+      return;
     }
   }
 
@@ -255,9 +274,8 @@ export class StateStore extends events.EventEmitter implements vscode.Disposable
       this.emit('statusChanged', this.get());
       return webhooks;
     } catch (err) {
-      // On API failure, clear session to show sign-in button
-      this.clearSessionAndEmit();
-      throw err;
+      await this.handleApiError(err);
+      return;
     }
   }
 

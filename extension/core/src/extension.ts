@@ -40,9 +40,15 @@ const handleCreateWebhookError = async (err: unknown): Promise<void> => {
 };
 
 export async function activate(context: vscode.ExtensionContext) {
-  context.subscriptions.push(new OhMyHooksAuthenticationProvider(context));
+  const authProvider = new OhMyHooksAuthenticationProvider(context);
+  context.subscriptions.push(authProvider);
 
-  const stateStore = new StateStore(context);
+  // 401 を受け取ったら secrets に残っている stale session を消す。
+  // これをやらないと、毎回 panel を開くたびに stale token で API を叩いて
+  // 401 を食らう無限ループになる。
+  const stateStore = new StateStore(context, async () => {
+    await authProvider.clearAllSessions();
+  });
 
   // session_id is regenerated on every extension activate (never persisted), so each
   // VS Code window / restart gets its own Durable Object and subscription set,
@@ -154,18 +160,24 @@ export async function activate(context: vscode.ExtensionContext) {
   let provider: OhMyHooksWebViewProvider;
 
   const initialLoad = async () => {
+    // ユーザが前回 guest mode を選んでいた場合は、認証付き API を叩く前に
+    // guest mode を復元する。stale session が secrets に残っていても、
+    // ここで先に分岐すれば 401 を踏まずに済む。
+    if (stateStore.getGuestModePreference()) {
+      if (!stateStore.get().isGuestMode) {
+        stateStore.enterGuestMode();
+      } else {
+        stateStore.emitStatus();
+      }
+      return;
+    }
+
     try {
-      // fetchAll silently returns undefined when unauthenticated, so always emit
-      // statusChanged at the end to clear the webview's loading state.
+      // 401 のときは fetchAll が黙って session を purge して返るので、
+      // ここでの try/catch は本当に想定外のエラー (ネットワーク障害等) のみを拾う。
       await stateStore.refreshSession();
       await stateStore.fetchAll();
       await ensureWSClient();
-      // Auto-restore guest mode if the user previously chose it while unauthenticated.
-      const status = stateStore.get();
-      if (!status.hasSession && !status.isGuestMode && stateStore.getGuestModePreference()) {
-        stateStore.enterGuestMode();
-        return;
-      }
       stateStore.emitStatus();
     } catch (err) {
       if (err instanceof Error) {

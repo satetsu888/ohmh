@@ -99,6 +99,24 @@ class OhMyHooksAuthenticationProvider
     }
   }
 
+  // 401 を検知した時に呼び出される。secrets に残っている stale session を
+  // すべて消すことで、次回 panel 起動時にまた 401 を出さないようにする。
+  public async clearAllSessions(): Promise<void> {
+    const allSessions = await this.context.secrets.get(SESSIONS_SECRET_KEY);
+    if (!allSessions) {
+      return;
+    }
+    const sessions = JSON.parse(allSessions) as AuthenticationSession[];
+    await this.context.secrets.delete(SESSIONS_SECRET_KEY);
+    if (sessions.length > 0) {
+      this._sessionChangeEmitter.fire({
+        added: [],
+        removed: sessions,
+        changed: [],
+      });
+    }
+  }
+
   public async dispose() {
     this._disposable.dispose();
   }
