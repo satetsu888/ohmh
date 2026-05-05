@@ -26,7 +26,7 @@ Anonymous mode produces an ephemeral webhook that is **deleted on disconnect** â
 |---|---|---|---|---|---|
 | Anonymous | $0 | 1 | 0 | 100 | none |
 | Free | $0 | 1 | 0 | 100 | none |
-| Basic | $1.98 / mo | 1 | 1 | 500 | 30 days |
+| Metered | $0 base + $0.60/peak persistent/mo | 1 | 10 | 500 | 30 days |
 
 Manage your plan at [ohmh.satetsu888.dev/settings](https://ohmh.satetsu888.dev/settings) or via the command palette: `Oh My Hooks: Open Settings`.
 

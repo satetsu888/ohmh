@@ -39,7 +39,7 @@ describe("getMe", () => {
         name: "Foo",
         email: "foo@example.com",
         image: null,
-        plan: { key: "basic", name: "Basic", limits: {} },
+        plan: { key: "metered", name: "Metered", limits: {} },
       }),
     );
     const me = await getMe(BASE_URL, TOKEN);

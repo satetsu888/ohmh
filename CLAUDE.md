@@ -98,7 +98,7 @@ ephemeral は REST では作成できず (400 + `reason: "ephemeral_via_ws_only"
 |---|---|---|---|---|
 | Anonymous | $0 | 1 | 0 | 100 |
 | Free | $0 | 1 | 0 | 100 |
-| Basic | $1.98/mo | 1 | 1 | 500 |
+| Metered | $0 base + $0.60/peak persistent/mo | 1 | 10 | 500 |
 
 > 真の source of truth はサーバ側 (`app/lib/subscription.server.ts`) のため、ここの数値はあくまで client UI 表示用の参考値。乖離していたらサーバを信頼する。
 
