@@ -53,15 +53,6 @@ export const refreshRequestsForWebhook = (webhookId: string): Message => {
   };
 };
 
-export const refreshAllExpandedWebhooks = (webhookIds: string[]): Message => {
-  return {
-    type: "refreshAllExpandedWebhooks",
-    args: {
-      webhookIds
-    }
-  };
-};
-
 // Pushes a WS-delivered request straight into the webview's in-memory state.
 // Required for ephemeral / anon (the server has no history for them); used for
 // persistent too so the row appears immediately (better UX than refreshRequestsForWebhook).

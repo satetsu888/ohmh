@@ -3,17 +3,13 @@
   "version": "0.0.1",
   "type": "module",
   "devDependencies": {
-    "@types/mocha": "^10.0.8",
     "@types/node": "^20.16.13",
-    "@types/pg": "^8.11.10",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.94.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.11.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",
@@ -23,7 +19,6 @@
   "dependencies": {
     "@vscode-elements/react-elements": "^0.4.0",
     "@vscode/codicons": "^0.0.36",
-    "@vscode/webview-ui-toolkit": "^1.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }

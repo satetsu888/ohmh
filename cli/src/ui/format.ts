@@ -27,20 +27,18 @@ export const renderTable = <T>(rows: T[], columns: Column<T>[]): string => {
 
   const widths = headers.map((_, i) => Math.max(...cells.map((row) => row[i].length)));
 
+  // No separator line under the header (keep output minimal, ngrok/curl-style).
   return cells
-    .map((row, rowIdx) => {
-      const line = row
+    .map((row) =>
+      row
         .map((cell, i) => {
           if (i === row.length - 1) {
             return cell;
           }
           return cell.padEnd(widths[i]);
         })
-        .join("  ");
-      // No separator line under the header (keep output minimal, ngrok/curl-style).
-      void rowIdx;
-      return line;
-    })
+        .join("  "),
+    )
     .join("\n");
 };
 

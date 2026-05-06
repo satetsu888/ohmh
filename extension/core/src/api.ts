@@ -46,7 +46,8 @@ export type AccountMe = {
 };
 
 
-const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787";
+// webpack DefinePlugin で build 時に置換される。
+const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL!;
 const API_URL_BASE = `${BASE_URL}/api`;
 const WEBHOOK_URL_BASE = BASE_URL;
 

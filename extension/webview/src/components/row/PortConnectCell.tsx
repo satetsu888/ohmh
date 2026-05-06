@@ -1,6 +1,6 @@
-import { useId } from "react";
-import { VscodeTableCell } from "@vscode-elements/react-elements";
-import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react";
+import { useId, type FormEvent } from "react";
+import { VscodeTableCell, VscodeTextfield } from "@vscode-elements/react-elements";
+import type { VscodeTextfield as VscodeTextfieldEl } from "@vscode-elements/elements/dist/vscode-textfield";
 import { Webhook } from "../../../../core/src/stateStore";
 import { IconButton } from "../common/IconButton";
 
@@ -66,23 +66,21 @@ export const PortConnectCell = ({
 
   return (
     <VscodeTableCell className="oh-my-hooks-no-padding">
-      <VSCodeTextField
+      <VscodeTextfield
         id={inputId}
         className="oh-my-hooks-port-input"
         value={portReady ? String(port) : ""}
-        style={{ width: "100%" }}
-        onInput={(ev) => {
+        onInput={(ev: FormEvent<VscodeTextfieldEl>) => {
           if (!editable) {
             ev.preventDefault();
             return;
           }
-          const target = ev.target as HTMLInputElement;
-          const parsed = parseInt(target.value, 10);
+          const parsed = parseInt(ev.currentTarget.value, 10);
           onPortChange(Number.isNaN(parsed) ? null : parsed);
         }}
       >
         <IconButton
-          slot="end"
+          slot="content-after"
           icon={variant.icon}
           title={variant.title}
           disabled={variant.disabled}
@@ -97,7 +95,7 @@ export const PortConnectCell = ({
             variant.action?.();
           }}
         />
-      </VSCodeTextField>
+      </VscodeTextfield>
     </VscodeTableCell>
   );
 };

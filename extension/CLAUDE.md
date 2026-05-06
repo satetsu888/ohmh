@@ -30,9 +30,6 @@ npm run watch
 # Run linter
 npm run lint
 
-# Run tests
-npm run test
-
 # Package for production
 npm run package
 ```
@@ -51,7 +48,6 @@ The extension consists of two webpack builds:
   - `secretStorageImpl.ts`: `vscode.SecretStorage` ラッパ (`SecretStore` の VS Code 実装)
 - `lib/`: VS Code 統合 (Authentication / Webview Provider)
 - `extension.ts`, `stateStore.ts`, `api.ts`, `messages.ts`, `util.ts`, `env.d.ts`
-- `test/`: VS Code テスト
 
 VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `forwarder.ts`, `secretStore.ts`, `auth/pkce.ts`) は **`ohmh/shared/`** に置かれており、ここから `../../../shared/...` で import する。CLI と共有しているため、`vscode` の import は `ohmh/shared/eslint.config.mjs` の `no-restricted-imports` で禁止されている (extension 側 ESLint ではなく shared 側で機械的に担保)。
 
@@ -118,18 +114,6 @@ Each row renders a kind badge (Ephemeral / Persistent) via `WebhookKindBadge`, d
 ### Anonymous Webhooks
 
 Command `oh-my-hooks.createAnonymousWebhook` opens a separate `WSClient` with `anonymous: true` (no sign-in required). The client connects with subprotocol `anonymous`, sends `subscribeAnonymous`, and receives `anonymousWebhookCreated` carrying the new webhook id. The webhook is always **ephemeral** kind (24h server-side TTL as a safety net), but in practice it lives only as long as that WS connection — closing it (or the extension) deletes the webhook on the server. The user is asked for a local port up-front; forwarding uses the same `forward()` helper as the authenticated path. There is no history / list view for anonymous webhooks (no server-side storage by definition).
-
-## Testing
-
-The extension uses VS Code's test framework. Tests are located in:
-- `/core/src/test/extension.test.ts`
-- `/webview/src/test/extension.test.ts`
-
-Run tests with proper compilation:
-```bash
-npm run pretest  # Compiles tests and runs lint
-npm run test     # Runs the test suite
-```
 
 ## Important Considerations
 

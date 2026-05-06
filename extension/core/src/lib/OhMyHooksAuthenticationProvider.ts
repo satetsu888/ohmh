@@ -21,7 +21,8 @@ import { createPkcePair, generateState } from "../../../../shared/auth/pkce";
 const CLIENT_ID = "ohmh-extension";
 const REDIRECT_URI = "vscode://satetsu888.ohmh";
 const SESSIONS_SECRET_KEY = "oh-my-hooks-sessions";
-const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787";
+// webpack DefinePlugin で build 時に置換される。
+const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL!;
 
 class UriEventHandler extends EventEmitter<Uri> implements UriHandler {
   public handleUri(uri: Uri) {
@@ -58,7 +59,6 @@ class OhMyHooksAuthenticationProvider
   }
 
   get onDidChangeSessions(): Event<AuthenticationProviderAuthenticationSessionsChangeEvent> {
-    console.log("onDidChangeSessions");
     return this._sessionChangeEmitter.event;
   }
 
@@ -229,19 +229,16 @@ class OhMyHooksAuthenticationProvider
       const state = query.get("state");
 
       if (!code) {
-        console.error("No authorization code");
         reject(new Error("No authorization code"));
         return;
       }
       if (!state) {
-        console.error("No state");
         reject(new Error("No state"));
         return;
       }
 
       const flow = this._pendingFlows.get(state);
       if (!flow) {
-        console.error("State not found");
         reject(new Error("State not found"));
         return;
       }

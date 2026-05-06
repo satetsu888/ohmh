@@ -24,8 +24,6 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
   const wsUrl = buildWsUrl(opts.baseUrl);
   const sessionId = uuid();
 
-  let webhookId: string | null = null;
-
   const client = new WSClient({
     wsUrl,
     clientType: "cli",
@@ -36,7 +34,6 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
       reportRequest(req, result);
     },
     onAnonymousWebhookCreated: (id) => {
-      webhookId = id;
       const url = buildWebhookUrl(opts.baseUrl, id);
       if (isJsonMode()) {
         emitJsonEvent({
@@ -83,7 +80,6 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
       error(err instanceof Error ? err.message : String(err));
     }
     // The anonymous webhook is deleted by the server when the WS closes; no REST call needed.
-    void webhookId;
     process.exit(0);
   };
   process.on("SIGINT", () => void shutdown());

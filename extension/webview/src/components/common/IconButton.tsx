@@ -18,7 +18,7 @@ type Props = {
   style?: CSSProperties;
   /** Render as a spinning loading indicator. */
   spinning?: boolean;
-  /** Set when the parent web component expects a `slot` (e.g. VSCodeTextField's slot="end"). */
+  /** Set when the parent web component expects a `slot` (e.g. VscodeTextfield's slot="content-after"). */
   slot?: string;
 };
 

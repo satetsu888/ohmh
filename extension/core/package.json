@@ -7,7 +7,6 @@
     "vscode": "^1.94.0"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.8",
     "@types/node": "^20.16.13",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
@@ -15,8 +14,6 @@
     "@types/vscode": "^1.94.0",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.11.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.2",

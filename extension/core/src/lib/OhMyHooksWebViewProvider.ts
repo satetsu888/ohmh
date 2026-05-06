@@ -86,21 +86,12 @@ class OhMyHooksWebViewProvider implements vscode.WebviewViewProvider {
         animation: oh-my-hooks-spin 1s linear infinite;
       }
 
-      /* Fit VSCodeTextField into the table cell with no gap. */
+      /* Fit vscode-textfield into the table cell with no gap. */
       .oh-my-hooks-port-input {
-        --input-padding-horizontal: 8px !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        width: 100%;
+        max-width: 100%;
       }
-      .oh-my-hooks-port-input::part(root) {
-        margin: 0 !important;
-        width: 100% !important;
-      }
-      .oh-my-hooks-port-input::part(control) {
-        padding-left: 8px !important;
-        width: 100% !important;
-      }
-      .oh-my-hooks-port-input [slot="end"] {
+      .oh-my-hooks-port-input [slot="content-after"] {
         z-index: 10;
         position: relative;
       }

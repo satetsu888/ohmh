@@ -39,9 +39,6 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
             setIsInitialized(true);
           }
           break;
-        case "connectionChanged":
-          console.log("Connection changed", message.args);
-          break;
         case "viewStateResponse":
           if (message.args.expandedWebhooks) {
             setExpandedWebhooks(message.args.expandedWebhooks);
@@ -58,16 +55,6 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
             vscode.postMessage({
               type: 'getWebhookRequests',
               args: { webhookId: message.args.webhookId }
-            });
-          }
-          break;
-        case "refreshAllExpandedWebhooks":
-          if (message.args.webhookIds && vscode) {
-            message.args.webhookIds.forEach((webhookId: string) => {
-              vscode.postMessage({
-                type: 'getWebhookRequests',
-                args: { webhookId }
-              });
             });
           }
           break;
@@ -97,8 +84,6 @@ export const useExtensionState = (vscode?: VSCodeApi) => {
           }));
           break;
         }
-        default:
-          console.log("Unknown message", message.type);
       }
     };
 

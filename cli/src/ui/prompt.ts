@@ -18,30 +18,6 @@ export const confirm = async (message: string, defaultValue = false): Promise<bo
   return Boolean(value);
 };
 
-export const select = async <T>(
-  message: string,
-  choices: { title: string; description?: string; value: T; disabled?: boolean }[],
-): Promise<T | undefined> => {
-  if (!isInteractive()) {
-    return undefined;
-  }
-  const { value } = await prompts(
-    {
-      type: "select",
-      name: "value",
-      message,
-      choices: choices.map((c) => ({
-        title: c.title,
-        description: c.description,
-        value: c.value,
-        disabled: c.disabled,
-      })),
-    },
-    { onCancel: () => process.exit(130) },
-  );
-  return value as T | undefined;
-};
-
 export const text = async (message: string, validate?: (v: string) => string | true): Promise<string | undefined> => {
   if (!isInteractive()) {
     return undefined;

@@ -17,10 +17,6 @@ export const UseAsGuestMessage = {
   type: "useAsGuest",
 } as const satisfies Message;
 
-export const ExitGuestMessage = {
-  type: "exitGuest",
-} as const satisfies Message;
-
 export const ConnectMessage = (webhookId: string, port: number): Message => {
   return {
     type: "connect",

@@ -9,6 +9,9 @@ import { WSClient } from "../../../shared/wsClient";
 import { forward } from "../../../shared/forwarder";
 import { RequestMessage } from "../../../shared/protocol";
 
+// webpack DefinePlugin で build 時に置換される。値は webpack.config.cjs の env を参照。
+const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL!;
+
 const handleCreateWebhookError = async (err: unknown): Promise<void> => {
   if (err instanceof api.CreateWebhookError) {
     if (err.status === 402) {
@@ -22,8 +25,7 @@ const handleCreateWebhookError = async (err: unknown): Promise<void> => {
         "Upgrade Plan",
       );
       if (action === "Upgrade Plan") {
-        const planUrl = `${process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787"}/settings`;
-        vscode.env.openExternal(vscode.Uri.parse(planUrl));
+        vscode.env.openExternal(vscode.Uri.parse(`${BASE_URL}/settings`));
       }
       return;
     }
@@ -231,11 +233,6 @@ export async function activate(context: vscode.ExtensionContext) {
           stateStore.enterGuestMode();
           break;
         }
-        case "exitGuest": {
-          await closeAnonClient();
-          stateStore.exitGuestMode();
-          break;
-        }
         case "connect": {
           const isGuest = stateStore.get().isGuestMode;
 
@@ -250,8 +247,7 @@ export async function activate(context: vscode.ExtensionContext) {
             anonForwardPort = port;
             stateStore.setGuestConnecting(port);
 
-            const baseUrl = process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787";
-            const wsUrl = baseUrl.replace(/^http/, "ws") + "/ws";
+            const wsUrl = BASE_URL.replace(/^http/, "ws") + "/ws";
             const anonSessionId = uuid();
             anonClient = new WSClient({
               wsUrl,
@@ -529,8 +525,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('ohmh.openSettings', () => {
-      const settingsUrl = `${process.env.OH_MY_HOOKS_BASE_URL || "http://localhost:8787"}/settings`;
-      vscode.env.openExternal(vscode.Uri.parse(settingsUrl));
+      vscode.env.openExternal(vscode.Uri.parse(`${BASE_URL}/settings`));
     })
   );
 
