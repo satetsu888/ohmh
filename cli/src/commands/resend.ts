@@ -14,7 +14,7 @@ export type ResendOptions = {
 
 export const resendCommand = async (opts: ResendOptions): Promise<void> => {
   if (!Number.isInteger(opts.port) || opts.port < 1 || opts.port > 65535) {
-    throw new CliError(`invalid port: ${opts.port}`, EXIT_BAD_INPUT);
+    throw new CliError(`invalid port: ${opts.port}`, EXIT_BAD_INPUT, "bad_input");
   }
 
   const session = await requireSession(opts.baseUrlOverride);
@@ -52,7 +52,7 @@ export const resendCommand = async (opts: ResendOptions): Promise<void> => {
     return;
   }
   if (result.error) {
-    throw new CliError(`resend failed: ${result.error}`);
+    throw new CliError(`resend failed: ${result.error}`, undefined, "forward_failed");
   }
   success(`Resent → http://localhost:${opts.port} (${result.status} in ${result.durationMs} ms)`);
   info(`(forwarded locally — server has no record of this resend)`);

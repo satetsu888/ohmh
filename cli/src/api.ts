@@ -43,6 +43,10 @@ export type AccountMe = {
   email: string;
   image: string | null;
   plan: PlanInfo;
+  // Present only when the user is on a usage-billed plan (Metered) with an
+  // active billing period.
+  currentPeakPersistent?: number;
+  estimatedUsageChargeCents?: number;
 };
 
 export type Misc = {
@@ -56,11 +60,20 @@ export type CreateWebhookOptions =
 export class CreateWebhookError extends HttpError {
   readonly kind?: WebhookKind;
   readonly reason?: string;
+  readonly webhookLimit?: number;
 
-  constructor(message: string, status: number, body: unknown, kind?: WebhookKind, reason?: string) {
+  constructor(
+    message: string,
+    status: number,
+    body: unknown,
+    kind?: WebhookKind,
+    reason?: string,
+    webhookLimit?: number,
+  ) {
     super(message, status, body);
     this.kind = kind;
     this.reason = reason;
+    this.webhookLimit = webhookLimit;
   }
 }
 
@@ -117,7 +130,7 @@ export const createWebhook = async (
     return (await res.json()) as Webhook;
   }
   const body = (await parseJsonSafe(res)) as
-    | { message?: string; kind?: WebhookKind; reason?: string }
+    | { message?: string; kind?: WebhookKind; reason?: string; webhookLimit?: number }
     | null;
   throw new CreateWebhookError(
     body?.message ?? res.statusText ?? `request failed (${res.status})`,
@@ -125,6 +138,7 @@ export const createWebhook = async (
     body,
     body?.kind,
     body?.reason,
+    body?.webhookLimit,
   );
 };
 

@@ -4,8 +4,10 @@ import { forward } from "../../../shared/forwarder";
 import type { ForwardResult } from "../../../shared/forwarder";
 import type { RequestMessage } from "../../../shared/protocol";
 import { buildWebhookUrl, buildWsUrl } from "../config";
+import { EXIT_GENERAL_ERROR } from "../errors";
 import {
   emitHumanLine,
+  emitJsonError,
   emitJsonEvent,
   error,
   info,
@@ -14,10 +16,12 @@ import {
   warn,
 } from "../ui/logger";
 import { formatTimeOnly } from "../ui/format";
+import { unlinkReadyFile, writeReadyFile } from "./readyFile";
 
 export type RunAnonymousOptions = {
   baseUrl: string;
   port: number;
+  readyFile?: string;
 };
 
 export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<void> => {
@@ -35,6 +39,9 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
     },
     onAnonymousWebhookCreated: (id) => {
       const url = buildWebhookUrl(opts.baseUrl, id);
+      if (opts.readyFile) {
+        writeReadyFile(opts.readyFile, { url, webhookId: id, mode: "anonymous" });
+      }
       if (isJsonMode()) {
         emitJsonEvent({
           type: "ready",
@@ -79,6 +86,9 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
     } catch (err) {
       error(err instanceof Error ? err.message : String(err));
     }
+    if (opts.readyFile) {
+      unlinkReadyFile(opts.readyFile);
+    }
     // The anonymous webhook is deleted by the server when the WS closes; no REST call needed.
     process.exit(0);
   };
@@ -92,7 +102,8 @@ export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<vo
     await client.connect();
   } catch (err) {
     error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
+    emitJsonError(err, EXIT_GENERAL_ERROR);
+    process.exit(EXIT_GENERAL_ERROR);
   }
 
   // After connecting, just wait for server-pushed requests. The promise never

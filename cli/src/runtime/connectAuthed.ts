@@ -7,8 +7,10 @@ import { getMisc } from "../api";
 import { buildWebhookUrl } from "../config";
 import type { ResolvedSession } from "../session/currentSession";
 import { formatTimeOnly } from "../ui/format";
+import { EXIT_GENERAL_ERROR } from "../errors";
 import {
   emitHumanLine,
+  emitJsonError,
   emitJsonEvent,
   error,
   info,
@@ -16,6 +18,7 @@ import {
   success,
   warn,
 } from "../ui/logger";
+import { unlinkReadyFile, writeReadyFile } from "./readyFile";
 
 export type RunAuthedOptions = {
   session: ResolvedSession;
@@ -23,10 +26,11 @@ export type RunAuthedOptions = {
   // null = create an ephemeral webhook (subscribeEphemeral).
   // string = subscribe to an existing webhook by id.
   webhookId: string | null;
+  readyFile?: string;
 };
 
 export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> => {
-  const { session, port, webhookId } = opts;
+  const { session, port, webhookId, readyFile } = opts;
 
   const misc = await getMisc(session.baseUrl, session.token);
   const wsUrl = misc.wsUrl;
@@ -46,6 +50,9 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
     onEphemeralWebhookCreated: (id) => {
       activeWebhookId = id;
       const url = buildWebhookUrl(session.baseUrl, id);
+      if (readyFile) {
+        writeReadyFile(readyFile, { url, webhookId: id, mode: "ephemeral" });
+      }
       if (isJsonMode()) {
         emitJsonEvent({ type: "ready", mode: "ephemeral", webhookId: id, url, forwardPort: port });
       } else {
@@ -91,6 +98,9 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
     } catch (err) {
       error(err instanceof Error ? err.message : String(err));
     }
+    if (readyFile) {
+      unlinkReadyFile(readyFile);
+    }
     process.exit(0);
   };
   process.on("SIGINT", () => void shutdown());
@@ -103,7 +113,8 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
     await client.connect();
   } catch (err) {
     error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
+    emitJsonError(err, EXIT_GENERAL_ERROR);
+    process.exit(EXIT_GENERAL_ERROR);
   }
 
   // Send the subscribe once the connection is up.
@@ -113,6 +124,9 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
     // Subscribe to an existing webhook. There is no dedicated subscribe-ack message,
     // so print the URL immediately.
     const url = buildWebhookUrl(session.baseUrl, webhookId);
+    if (readyFile) {
+      writeReadyFile(readyFile, { url, webhookId, mode: "persistent" });
+    }
     if (isJsonMode()) {
       emitJsonEvent({
         type: "ready",

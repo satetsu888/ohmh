@@ -29,7 +29,15 @@ export const loginCommand = async (opts: LoginOptions): Promise<void> => {
   authorizeUrl.searchParams.set("code_challenge", pkce.codeChallenge);
   authorizeUrl.searchParams.set("code_challenge_method", pkce.codeChallengeMethod);
 
-  if (!isJsonMode()) {
+  if (isJsonMode()) {
+    // Surface the URL up-front so headless agents can hand it back to a human
+    // before the browser is launched.
+    emitJsonEvent({
+      type: "login_url",
+      url: authorizeUrl.toString(),
+      redirectUri: loopback.redirectUri,
+    });
+  } else {
     info(`opening browser to sign in: ${authorizeUrl.toString()}`);
     info(`(if the browser does not open automatically, copy and paste the URL above)`);
   }

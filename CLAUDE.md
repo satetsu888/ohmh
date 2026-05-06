@@ -21,15 +21,19 @@ ohmh/
 ├── extension/               # VS Code 拡張
 │   ├── core/                # 拡張本体 (Node.js)
 │   └── webview/             # webview UI (React)
-└── shared/                  # client 間で共有するモジュール (vscode 非依存)
-    ├── protocol.ts          # WS protocol types
-    ├── wsClient.ts          # WebSocket client (再接続)
-    ├── forwarder.ts         # localhost への HTTP 転送
-    ├── secretStore.ts       # SecretStore interface
-    └── auth/pkce.ts         # PKCE (S256, base64url) ペア / state 生成
+├── shared/                  # client 間で共有するモジュール (vscode 非依存)
+│   ├── protocol.ts          # WS protocol types
+│   ├── wsClient.ts          # WebSocket client (再接続)
+│   ├── forwarder.ts         # localhost への HTTP 転送
+│   ├── secretStore.ts       # SecretStore interface
+│   └── auth/pkce.ts         # PKCE (S256, base64url) ペア / state 生成
+└── skills/                  # AI エージェント向け Agent Skills
+    └── ohmh/                # ohmh CLI を AI から使うための skill (Claude Code / Codex CLI 等で利用)
 ```
 
 > `shared/protocol.ts` はサーバ側の protocol 定義と内容を一致させる必要がある。サーバ実装は別リポジトリにあり、当面は手作業同期で運用する。
+>
+> `skills/ohmh/` は [Agent Skills 公式仕様](https://agentskills.io/specification) 準拠。primary verified targets は Claude Code と Codex CLI。skill 本体は `skills/ohmh/SKILL.md`。
 
 ## Development Commands
 

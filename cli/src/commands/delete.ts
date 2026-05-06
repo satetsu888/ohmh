@@ -22,7 +22,7 @@ export const deleteCommand = async (opts: DeleteOptions): Promise<void> => {
 
   const removed = await deleteWebhook(session.baseUrl, session.token, opts.webhookId);
   if (!removed) {
-    throw new CliError(`webhook not found: ${opts.webhookId}`, EXIT_NOT_FOUND);
+    throw new CliError(`webhook not found: ${opts.webhookId}`, EXIT_NOT_FOUND, "not_found");
   }
   if (isJsonMode()) {
     emitJsonEvent({ type: "delete", webhookId: opts.webhookId, deleted: true });

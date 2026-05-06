@@ -9,8 +9,9 @@ import { deleteCommand } from "./commands/delete";
 import { requestsCommand } from "./commands/requests";
 import { requestCommand } from "./commands/request";
 import { resendCommand } from "./commands/resend";
-import { CliError } from "./errors";
-import { error, setJsonMode, setQuiet, setVerbose } from "./ui/logger";
+import { schemaCommand } from "./commands/schema";
+import { CliError, EXIT_GENERAL_ERROR } from "./errors";
+import { emitJsonError, error, setJsonMode, setQuiet, setVerbose } from "./ui/logger";
 
 const VERSION = "0.1.0";
 
@@ -24,7 +25,33 @@ const main = async (argv: string[]): Promise<number> => {
     .addOption(new Option("--base-url <url>", "Override base URL (env: OH_MY_HOOKS_BASE_URL)"))
     .addOption(new Option("--json", "Emit machine-readable NDJSON output").default(false))
     .addOption(new Option("-q, --quiet", "Suppress info-level output").default(false))
-    .addOption(new Option("-v, --verbose", "Enable debug output").default(false));
+    .addOption(new Option("-v, --verbose", "Enable debug output").default(false))
+    .addHelpText(
+      "after",
+      `
+Exit codes:
+  0  success
+  1  general error
+  2  authentication error (try \`ohmh login\`)
+  3  plan limit reached
+  4  webhook or request not found
+  5  invalid input (e.g. bad port)
+
+Environment variables:
+  OH_MY_HOOKS_BASE_URL   override base URL (default https://ohmh.satetsu888.dev)
+  XDG_CONFIG_HOME        override ~/.config dir for credential storage
+
+Plans (see https://ohmh.satetsu888.dev/settings):
+  Free      $0          1 ephemeral, 0 persistent, 100 req/day
+  Metered   $0 base + $0.60/mo per peak persistent webhook
+            1 ephemeral, 10 persistent, 500 req/day, 30d history
+
+For machine-readable output, pass --json. Each subcommand emits NDJSON events
+on stdout (one JSON object per line); human-readable prose moves to stderr.
+NDJSON consumers should ignore unknown \`type\` values for forward compatibility.
+For details: https://github.com/satetsu888/ohmh/blob/main/cli/README.md
+`,
+    );
 
   // Mirror connect's options on the root so `ohmh --port 3000` works without a subcommand.
   // Explicit subcommands shadow these (Commander prefers the subcommand parser).
@@ -32,6 +59,7 @@ const main = async (argv: string[]): Promise<number> => {
     .option("-p, --port <port>", "Local port to forward to")
     .option("-i, --id <webhookId>", "Subscribe to an existing webhook by id")
     .option("--anonymous", "Force anonymous mode even when authenticated")
+    .option("--ready-file <path>", "Touch this file with the webhook URL (JSON) once ready")
     .action(async (_opts, cmd: Command) => {
       const opts = cmd.optsWithGlobals();
       applyGlobalFlags(opts);
@@ -40,6 +68,7 @@ const main = async (argv: string[]): Promise<number> => {
         webhookId: opts.id,
         anonymous: Boolean(opts.anonymous),
         baseUrlOverride: opts.baseUrl,
+        readyFile: opts.readyFile,
       });
     });
 
@@ -49,6 +78,25 @@ const main = async (argv: string[]): Promise<number> => {
     .option("-p, --port <port>", "Local port to forward to")
     .option("-i, --id <webhookId>", "Subscribe to an existing webhook by id")
     .option("--anonymous", "Force anonymous mode even when authenticated")
+    .option("--ready-file <path>", "Touch this file with the webhook URL (JSON) once ready")
+    .addHelpText(
+      "after",
+      `
+Notes:
+  - This is a long-running process. It exits only on SIGINT/SIGTERM.
+  - Run it in the background when used from an AI agent or shell script.
+  - In --json mode it emits NDJSON events on stdout (line-buffered):
+      { "type": "ready", "mode": "anonymous"|"ephemeral"|"persistent",
+        "webhookId": "...", "url": "...", "forwardPort": <n> }
+      { "type": "request", "ts": "...", "method": "...", "path": "...",
+        "status": <number|null>, "durationMs": <n>,
+        "error": "..."|undefined,
+        "webhookId": "...", "sourceRequestId": "..." }
+  - With --ready-file <path>, that path is written (mode 0600) with a JSON
+    line { "url", "webhookId", "mode" } the moment the webhook is ready.
+    The file is removed on graceful shutdown.
+`,
+    )
     .action(async (opts, cmd: Command) => {
       const merged = cmd.optsWithGlobals();
       applyGlobalFlags(merged);
@@ -57,6 +105,7 @@ const main = async (argv: string[]): Promise<number> => {
         webhookId: opts.id,
         anonymous: Boolean(opts.anonymous),
         baseUrlOverride: merged.baseUrl,
+        readyFile: opts.readyFile,
       });
     });
 
@@ -151,6 +200,13 @@ const main = async (argv: string[]): Promise<number> => {
     });
 
   program
+    .command("schema")
+    .description("Print the JSON Schema for --json NDJSON events to stdout")
+    .action(() => {
+      schemaCommand();
+    });
+
+  program
     .command("resend <id> <reqId>")
     .description("Resend a past request to a local port (via local forwarder, no server roundtrip)")
     .requiredOption("-p, --port <port>", "Local port to forward to")
@@ -169,12 +225,10 @@ const main = async (argv: string[]): Promise<number> => {
     await program.parseAsync(argv);
     return 0;
   } catch (err) {
-    if (err instanceof CliError) {
-      error(err.message);
-      return err.exitCode;
-    }
+    const exitCode = err instanceof CliError ? err.exitCode : EXIT_GENERAL_ERROR;
     error(err instanceof Error ? err.message : String(err));
-    return 1;
+    emitJsonError(err, exitCode);
+    return exitCode;
   }
 };
 
@@ -189,6 +243,26 @@ const applyGlobalFlags = (opts: Record<string, unknown>): void => {
     setVerbose(true);
   }
 };
+
+// Ensure stdout writes are flushed line-by-line even when piped. Without this,
+// agents that tail our stdout (Monitor tools, `tail -f`, etc.) can see seconds
+// of latency on a fresh ready/request event because Node block-buffers stdout
+// when it's a pipe. setBlocking(true) is the documented escape hatch:
+// https://nodejs.org/api/process.html#a-note-on-process-io
+const stdoutHandle = (process.stdout as unknown as { _handle?: { setBlocking?: (b: boolean) => void } })._handle;
+if (stdoutHandle && typeof stdoutHandle.setBlocking === "function") {
+  stdoutHandle.setBlocking(true);
+}
+
+// When piped to a consumer that closes early (`ohmh schema | head -1`,
+// `... | jq <bogus>`), setBlocking turns subsequent writes into synchronous
+// EPIPE throws. Treat EPIPE as a clean shutdown rather than a crash.
+process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EPIPE") {
+    process.exit(0);
+  }
+  throw err;
+});
 
 main(process.argv).then((code) => {
   if (code !== 0) {
