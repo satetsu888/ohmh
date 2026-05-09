@@ -1,6 +1,6 @@
 {
   "name": "ohmh",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Forward webhooks from ohmh.satetsu888.dev to your local dev server.",
   "license": "MIT",
   "bin": {
