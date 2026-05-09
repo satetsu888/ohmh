@@ -27,6 +27,11 @@ export type WSClientOptions = {
 
 type State = "idle" | "connecting" | "open" | "closing" | "closed";
 
+const isLoopbackHostname = (hostname: string): boolean => {
+  // URL parses [::1] hostnames as "::1" without brackets.
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+};
+
 // Thin WebSocket client that sends/receives ServerMessage / ClientMessage.
 // Has no dependency on the VS Code API.
 export class WSClient extends EventEmitter {
@@ -148,7 +153,33 @@ export class WSClient extends EventEmitter {
       subprotocol = `bearer.${token}`;
     }
 
-    const url = new URL(this.opts.wsUrl);
+    let url: URL;
+    try {
+      url = new URL(this.opts.wsUrl);
+    } catch (err) {
+      this.intentionalClose = true;
+      this.state = "closed";
+      this.emit("error", err);
+      return;
+    }
+    // Refuse to send the bearer token over plaintext ws:// against a non-loopback
+    // host. wss:// is required in production; ws:// is only allowed for local dev
+    // (localhost / 127.0.0.1 / ::1).
+    if (url.protocol !== "wss:" && url.protocol !== "ws:") {
+      this.intentionalClose = true;
+      this.state = "closed";
+      this.emit("error", new Error(`unsupported ws url scheme: ${url.protocol}`));
+      return;
+    }
+    if (url.protocol === "ws:" && !isLoopbackHostname(url.hostname)) {
+      this.intentionalClose = true;
+      this.state = "closed";
+      this.emit(
+        "error",
+        new Error(`refusing to use plaintext ws:// against non-loopback host ${url.hostname}; use wss://`),
+      );
+      return;
+    }
     url.searchParams.set("session", this.opts.sessionId);
     url.searchParams.set("client", this.opts.clientType);
 

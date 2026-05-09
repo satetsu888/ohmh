@@ -3,8 +3,7 @@ import type { AddressInfo } from "node:net";
 
 // Loopback HTTP server used as the CLI's OAuth redirect target. Tries ports
 // 53682-53690 in order and uses the first one that binds successfully. The
-// range must stay in sync with the server's allowed CLI redirect URIs
-// (oh-my-hooks/app/services/oauth2.server.ts).
+// range must stay in sync with the server's allowed CLI redirect URIs.
 
 const PORT_START = 53682;
 const PORT_END = 53690;

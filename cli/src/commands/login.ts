@@ -38,18 +38,20 @@ export const loginCommand = async (opts: LoginOptions): Promise<void> => {
       redirectUri: loopback.redirectUri,
     });
   } else {
-    info(`opening browser to sign in: ${authorizeUrl.toString()}`);
-    info(`(if the browser does not open automatically, copy and paste the URL above)`);
+    // Avoid printing the full URL by default — it carries `state` and
+    // `code_challenge`, which are part of the CSRF / PKCE defenses and should
+    // not end up in shared terminals or CI logs. The full URL is only printed
+    // as a fallback when the browser fails to open.
+    info(`opening browser to sign in to ${baseUrl}`);
   }
 
-  // Open the browser. The URL was already printed, so a failure here is non-fatal.
   // `open` is an ESM-only package, so import it dynamically (tsup bundles it into the CJS output).
   try {
     const { default: open } = await import("open");
     await open(authorizeUrl.toString());
   } catch (err) {
     error(`failed to open browser: ${err instanceof Error ? err.message : String(err)}`);
-    error(`please open the URL above manually.`);
+    error(`please open this URL manually: ${authorizeUrl.toString()}`);
   }
 
   let result;

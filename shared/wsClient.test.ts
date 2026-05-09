@@ -88,7 +88,7 @@ const onRequestNoop = async () => {
 describe("WSClient (anonymous)", () => {
   it("attaches the 'anonymous' subprotocol and auto-sends subscribeAnonymous on open", async () => {
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-1",
       anonymous: true,
@@ -107,7 +107,7 @@ describe("WSClient (anonymous)", () => {
   it("notifies onAnonymousWebhookCreated and clears anonymousPending so reconnect does not re-create", async () => {
     const onCreated = vi.fn();
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-2",
       anonymous: true,
@@ -136,7 +136,7 @@ describe("WSClient (authed)", () => {
   it("attaches bearer.<token> subprotocol via getAccessToken", async () => {
     const getAccessToken = vi.fn(async () => "TKN");
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "vscode",
       sessionId: "sess-3",
       onRequest: onRequestNoop,
@@ -150,7 +150,7 @@ describe("WSClient (authed)", () => {
 
   it("subscribe() resends every active subscription on reconnect", async () => {
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-4",
       onRequest: onRequestNoop,
@@ -176,7 +176,7 @@ describe("WSClient (authed)", () => {
 
   it("unsubscribe() removes from the replay set so reconnect does not re-subscribe", async () => {
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-5",
       onRequest: onRequestNoop,
@@ -201,7 +201,7 @@ describe("WSClient (authed)", () => {
   it("subscribeEphemeral keeps ephemeralPending=true so reconnect re-requests a fresh ephemeral id", async () => {
     const onEphemeral = vi.fn();
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-6",
       onRequest: onRequestNoop,
@@ -227,7 +227,7 @@ describe("WSClient (authed)", () => {
 
   it("unsubscribeEphemeral cancels the pending flag and sends a regular unsubscribe", async () => {
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-7",
       onRequest: onRequestNoop,
@@ -258,7 +258,7 @@ describe("WSClient (authed)", () => {
       /* noop */
     });
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-8",
       onRequest,
@@ -287,7 +287,7 @@ describe("WSClient (authed)", () => {
 
   it("send() drops messages while disconnected; subscribe replays after reconnect", async () => {
     const client = new WSClient({
-      wsUrl: "ws://example.test/ws",
+      wsUrl: "wss://example.test/ws",
       clientType: "cli",
       sessionId: "sess-10",
       onRequest: onRequestNoop,
@@ -302,5 +302,54 @@ describe("WSClient (authed)", () => {
     ws.fireOpen();
     // Subscriptions are replayed on open.
     expect(ws.sent).toContainEqual({ type: "subscribe", webhookId: "wh_x" });
+  });
+});
+
+describe("WSClient (url scheme guards)", () => {
+  it("refuses ws:// against a non-loopback hostname (would leak bearer in plaintext)", async () => {
+    const errors: unknown[] = [];
+    const client = new WSClient({
+      wsUrl: "ws://example.test/ws",
+      clientType: "cli",
+      sessionId: "sess-guard",
+      onRequest: onRequestNoop,
+      getAccessToken: async () => "TKN",
+    });
+    client.on("error", (err) => errors.push(err));
+    await client.connect();
+
+    expect(MockWebSocket.instances).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect((errors[0] as Error).message).toMatch(/non-loopback host/);
+  });
+
+  it("allows ws:// against localhost (local dev)", async () => {
+    const client = new WSClient({
+      wsUrl: "ws://localhost:8787/ws",
+      clientType: "cli",
+      sessionId: "sess-local",
+      onRequest: onRequestNoop,
+      getAccessToken: async () => "TKN",
+    });
+    await client.connect();
+
+    expect(MockWebSocket.instances).toHaveLength(1);
+  });
+
+  it("rejects unsupported schemes like http://", async () => {
+    const errors: unknown[] = [];
+    const client = new WSClient({
+      wsUrl: "http://example.test/ws",
+      clientType: "cli",
+      sessionId: "sess-bad",
+      onRequest: onRequestNoop,
+      getAccessToken: async () => "TKN",
+    });
+    client.on("error", (err) => errors.push(err));
+    await client.connect();
+
+    expect(MockWebSocket.instances).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect((errors[0] as Error).message).toMatch(/unsupported ws url scheme/);
   });
 });

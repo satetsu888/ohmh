@@ -104,7 +104,7 @@ ephemeral は REST では作成できず (400 + `reason: "ephemeral_via_ws_only"
 | Free | $0 | 1 | 0 | 100 |
 | Metered | $0 base + $0.60/peak persistent/mo | 1 | 10 | 500 |
 
-> 真の source of truth はサーバ側 (`app/lib/subscription.server.ts`) のため、ここの数値はあくまで client UI 表示用の参考値。乖離していたらサーバを信頼する。
+> 真の source of truth はサーバ側設定で、`https://ohmh.satetsu888.dev/settings` に表示される値が常に正。ここの表は client UI 表示用の参考値であり、乖離していたら settings ページを信頼する。
 
 ## Important Patterns
 

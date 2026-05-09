@@ -51,7 +51,7 @@ The extension consists of two webpack builds:
 
 VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `forwarder.ts`, `secretStore.ts`, `auth/pkce.ts`) は **`ohmh/shared/`** に置かれており、ここから `../../../shared/...` で import する。CLI と共有しているため、`vscode` の import は `ohmh/shared/eslint.config.mjs` の `no-restricted-imports` で禁止されている (extension 側 ESLint ではなく shared 側で機械的に担保)。
 
-> サーバ側の WS protocol 定義は別リポジトリの `app/lib/ws_protocol.ts`。`ohmh/shared/protocol.ts` と内容を一致させる必要がある (手動同期)。
+> サーバ側にも対応する WS protocol 定義があり、`ohmh/shared/protocol.ts` と内容を一致させる必要がある (手動同期)。
 
 ### Key Components
 
@@ -78,9 +78,8 @@ VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `fo
    - Bidirectional communication via `postMessage` API
 
 2. **Webhook Request Flow** (one-way WS)
-   - Webhook received by Oh My Hooks service → written to D1 + R2 (skipped for ephemeral / anon)
-   - Server fans out to subscribed sessions via `SessionNotifierDO.fetch('/notify', ...)`
-   - DO sends WS `request` message to connected client (extension)
+   - Webhook received by the Oh My Hooks service (server-side persistence is an internal concern of the service; ephemeral / anon are pass-through)
+   - Server pushes a WS `request` message to subscribed clients (extension)
    - Extension immediately pushes `webhookRequestReceived` to the webview so the row shows up
    - Extension `forwarder.forward()` posts to `http://localhost:<port>`; the result (status / error / durationMs) is pushed to the webview as `webhookForwardResult`
    - Server is not informed of the forward result (no `response` message exists)
@@ -99,7 +98,7 @@ The server defines two webhook kinds (see project root `/CLAUDE.md`): **ephemera
 
 #### Ephemeral webhook (placeholder + Connect on demand)
 
-The webhook list always shows a single **ephemeral placeholder** entry at the top (set via `stateStore.buildEphemeralPlaceholder` after sign-in). It has `id: ""` until connected. On Connect, the extension calls `wsClient.subscribeEphemeral()`; the server replies with `ephemeralWebhookCreated` carrying a fresh id, which `stateStore.setEphemeralWebhookId` writes back into the placeholder. On Disconnect, the extension sends `unsubscribeEphemeral(id)`; the server deletes the webhook from D1 + R2 and the placeholder id is cleared. WS reconnect re-issues a new ephemeral id via `ephemeralPending` in `WSClient`.
+The webhook list always shows a single **ephemeral placeholder** entry at the top (set via `stateStore.buildEphemeralPlaceholder` after sign-in). It has `id: ""` until connected. On Connect, the extension calls `wsClient.subscribeEphemeral()`; the server replies with `ephemeralWebhookCreated` carrying a fresh id, which `stateStore.setEphemeralWebhookId` writes back into the placeholder. On Disconnect, the extension sends `unsubscribeEphemeral(id)`; the server deletes the webhook and the placeholder id is cleared. WS reconnect re-issues a new ephemeral id via `ephemeralPending` in `WSClient`.
 
 **Ephemeral webhooks are never created via REST** — `POST /api/webhooks { type: "ephemeral" }` returns 400. The list endpoint also filters them out so other VS Code windows do not see each other's ephemerals.
 
