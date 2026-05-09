@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "node:crypto";
 import { WSClient } from "../../../shared/wsClient";
 import { forward } from "../../../shared/forwarder";
 import type { ForwardResult } from "../../../shared/forwarder";
@@ -26,7 +26,7 @@ export type RunAnonymousOptions = {
 
 export const runAnonymousConnect = async (opts: RunAnonymousOptions): Promise<void> => {
   const wsUrl = buildWsUrl(opts.baseUrl);
-  const sessionId = uuid();
+  const sessionId = randomUUID();
 
   const client = new WSClient({
     wsUrl,

@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "node:crypto";
 import { WSClient } from "../../../shared/wsClient";
 import { forward } from "../../../shared/forwarder";
 import type { ForwardResult } from "../../../shared/forwarder";
@@ -35,7 +35,7 @@ export const runAuthedConnect = async (opts: RunAuthedOptions): Promise<void> =>
   const misc = await getMisc(session.baseUrl, session.token);
   const wsUrl = misc.wsUrl;
 
-  const sessionId = uuid();
+  const sessionId = randomUUID();
   let activeWebhookId: string | null = webhookId;
 
   const client = new WSClient({
