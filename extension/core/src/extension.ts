@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "node:crypto";
 import OhMyHooksAuthenticationProvider from "./lib/OhMyHooksAuthenticationProvider";
 import OhMyHooksWebViewProvider from "./lib/OhMyHooksWebViewProvider";
 import { StateStore, type Status } from "./stateStore";
@@ -55,7 +55,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // session_id is regenerated on every extension activate (never persisted), so each
   // VS Code window / restart gets its own Durable Object and subscription set,
   // even for the same user.
-  const sessionId = uuid();
+  const sessionId = randomUUID();
 
   let wsClient: WSClient | null = null;
   // Independent WS for guest mode. Opened by the webview's Connect, closed on
@@ -248,7 +248,7 @@ export async function activate(context: vscode.ExtensionContext) {
             stateStore.setGuestConnecting(port);
 
             const wsUrl = BASE_URL.replace(/^http/, "ws") + "/ws";
-            const anonSessionId = uuid();
+            const anonSessionId = randomUUID();
             anonClient = new WSClient({
               wsUrl,
               clientType: "vscode",

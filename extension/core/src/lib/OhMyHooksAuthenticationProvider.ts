@@ -14,7 +14,7 @@ import {
   UriHandler,
   window,
 } from "vscode";
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "node:crypto";
 import { PromiseAdapter, promiseFromEvent } from "../util";
 import { createPkcePair, generateState } from "../../../../shared/auth/pkce";
 
@@ -136,7 +136,7 @@ class OhMyHooksAuthenticationProvider
       }
 
       const session: AuthenticationSession = {
-        id: uuid(),
+        id: randomUUID(),
         accessToken: token,
         account: {
           id: userinfo.email,
