@@ -95,14 +95,14 @@ describe("buildWsUrl", () => {
 
 describe("buildWebhookUrl", () => {
   it("replaces the leading subdomain of the base host with the webhook id", () => {
-    expect(buildWebhookUrl("https://ohmh.satetsu888.dev", "ohmh_abc")).toBe(
-      "https://ohmh_abc.satetsu888.dev/",
+    expect(buildWebhookUrl("https://ohmh.satetsu888.dev", "ohmh-abc")).toBe(
+      "https://ohmh-abc.satetsu888.dev/",
     );
   });
 
   it("prepends the webhook id when the host has no subdomain (localhost / non-default ports)", () => {
-    expect(buildWebhookUrl("http://localhost:8787", "ohmh_xyz")).toBe(
-      "http://ohmh_xyz.localhost:8787/",
+    expect(buildWebhookUrl("http://localhost:8787", "ohmh-xyz")).toBe(
+      "http://ohmh-xyz.localhost:8787/",
     );
   });
 });

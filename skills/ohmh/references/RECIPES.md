@@ -16,7 +16,7 @@ ohmh --json list \
   | jq '.webhooks[] | select(.expiresAt == null) | {id, createdAt}'
 
 # Recent requests for a specific webhook (default limit is 20).
-WEBHOOK_ID=ohmh_xxx
+WEBHOOK_ID=ohmh-xxx
 ohmh --json requests "$WEBHOOK_ID" --limit 50 \
   | jq '.requests[] | {id, method, url, createdAt}'
 
@@ -37,7 +37,7 @@ ohmh --json request "$WEBHOOK_ID" "$REQ_ID" \
 The CLI's local forwarder replays the stored request directly to the chosen port — there is no server round-trip and no record of the resend on the server side:
 
 ```bash
-WEBHOOK_ID=ohmh_xxx
+WEBHOOK_ID=ohmh-xxx
 REQ_ID=...
 PORT=3000
 

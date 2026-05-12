@@ -18,8 +18,8 @@ describe("readyFile", () => {
   it("writeReadyFile writes a JSON line with url/webhookId/mode and is mode 0600", () => {
     const path = join(dir, "ready");
     writeReadyFile(path, {
-      url: "https://ohmh_x.example/",
-      webhookId: "ohmh_x",
+      url: "https://ohmh-x.example/",
+      webhookId: "ohmh-x",
       mode: "anonymous",
     });
 
@@ -27,8 +27,8 @@ describe("readyFile", () => {
     expect(content.endsWith("\n")).toBe(true);
     const parsed = JSON.parse(content.trim());
     expect(parsed).toEqual({
-      url: "https://ohmh_x.example/",
-      webhookId: "ohmh_x",
+      url: "https://ohmh-x.example/",
+      webhookId: "ohmh-x",
       mode: "anonymous",
     });
 

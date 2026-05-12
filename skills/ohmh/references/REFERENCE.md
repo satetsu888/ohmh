@@ -21,7 +21,7 @@ With `--json`, stdout becomes **NDJSON** (one JSON object per line). Human-reada
 
 | `type` | When | Fields |
 |---|---|---|
-| `ready` | exactly once, when WS is up and the webhook id is known | `mode` (`"anonymous"` \| `"ephemeral"` \| `"persistent"`), `webhookId` (string), `url` (string, e.g. `https://ohmh_xxx.satetsu888.dev/`), `forwardPort` (integer 1-65535) |
+| `ready` | exactly once, when WS is up and the webhook id is known | `mode` (`"anonymous"` \| `"ephemeral"` \| `"persistent"`), `webhookId` (string), `url` (string, e.g. `https://ohmh-xxx.satetsu888.dev/`), `forwardPort` (integer 1-65535) |
 | `request` | once per webhook arrival (= once per forward attempt) | `ts` (ISO 8601), `sourceRequestId` (string), `webhookId` (string), `method` (string), `path` (string), `status` (integer \| null; null means upstream error), `durationMs` (number), `error` (string \| undefined) |
 | `error` | once before non-zero exit | `code`, `exitCode`, `message`, `name`, optional: `kind`, `reason`, `webhookLimit`, `status` |
 
@@ -136,12 +136,12 @@ esac
 
 ## Webhook ID and URL format
 
-Webhook IDs are prefixed `ohmh_`. The webhook URL is formed by replacing the leading subdomain of the base host with the id:
+Webhook IDs are prefixed `ohmh-`. The webhook URL is formed by replacing the leading subdomain of the base host with the id:
 
 - Base: `https://ohmh.satetsu888.dev/`
-- Webhook (`ohmh_abc`): `https://ohmh_abc.satetsu888.dev/`
+- Webhook (`ohmh-abc`): `https://ohmh-abc.satetsu888.dev/`
 
-For development hosts without a subdomain (e.g. `http://localhost:8787/`), the id is prepended: `http://ohmh_abc.localhost:8787/`.
+For development hosts without a subdomain (e.g. `http://localhost:8787/`), the id is prepended: `http://ohmh-abc.localhost:8787/`.
 
 The CLI computes the URL from whichever base URL it is using, so `--base-url` automatically affects the URLs reported in `ready` events.
 

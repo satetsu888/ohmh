@@ -8,7 +8,7 @@ Test webhooks from third-party services (Stripe, GitHub, Slack, …) on your lap
 
 1. Open the **Oh My Hooks** panel from the bottom panel area of VS Code.
 2. Click **Sign in** to authenticate via your browser (GitHub OAuth). Or skip sign-in: click **Connect** on the anonymous row to try an ephemeral URL with no account.
-3. Enter your local port (e.g. `3000`) and **Connect**. A unique webhook URL like `https://ohmh_xxx.satetsu888.dev/` appears.
+3. Enter your local port (e.g. `3000`) and **Connect**. A unique webhook URL like `https://ohmh-xxx.satetsu888.dev/` appears.
 4. Point a webhook source (Stripe, GitHub, …) at that URL. Incoming requests are forwarded to `http://localhost:<port>` and shown in the panel with method / status / duration.
 
 ## Webhook types

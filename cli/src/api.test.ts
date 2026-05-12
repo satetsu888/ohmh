@@ -57,9 +57,9 @@ describe("getMe", () => {
 
 describe("getWebhooks", () => {
   it("returns the webhooks array from { webhooks: [...] }", async () => {
-    fetchSpy.mockResolvedValueOnce(jsonResponse(200, { webhooks: [{ id: "ohmh_a", enabled: true }] }));
+    fetchSpy.mockResolvedValueOnce(jsonResponse(200, { webhooks: [{ id: "ohmh-a", enabled: true }] }));
     const list = await getWebhooks(BASE_URL, TOKEN);
-    expect(list).toEqual([{ id: "ohmh_a", enabled: true }]);
+    expect(list).toEqual([{ id: "ohmh-a", enabled: true }]);
   });
 
   it("falls back to [] when the body has no `webhooks` field", async () => {
@@ -70,9 +70,9 @@ describe("getWebhooks", () => {
 
 describe("createWebhook", () => {
   it("returns the webhook on 201", async () => {
-    fetchSpy.mockResolvedValueOnce(jsonResponse(201, { id: "ohmh_new", enabled: true }));
+    fetchSpy.mockResolvedValueOnce(jsonResponse(201, { id: "ohmh-new", enabled: true }));
     const created = await createWebhook(BASE_URL, TOKEN, { type: "persistent" });
-    expect(created.id).toBe("ohmh_new");
+    expect(created.id).toBe("ohmh-new");
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(init.method).toBe("POST");
     expect((init.headers as Record<string, string>)["Content-Type"]).toBe("application/json");
@@ -111,27 +111,27 @@ describe("createWebhook", () => {
 describe("deleteWebhook", () => {
   it("returns true on 200", async () => {
     fetchSpy.mockResolvedValueOnce(jsonResponse(200, { deleted: true }));
-    expect(await deleteWebhook(BASE_URL, TOKEN, "ohmh_a")).toBe(true);
+    expect(await deleteWebhook(BASE_URL, TOKEN, "ohmh-a")).toBe(true);
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://api.example/api/webhooks/ohmh_a");
+    expect(url).toBe("https://api.example/api/webhooks/ohmh-a");
     expect(init.method).toBe("DELETE");
   });
 
   it("returns false on 404 (idempotent semantics)", async () => {
     fetchSpy.mockResolvedValueOnce(jsonResponse(404, { error: "not found" }));
-    expect(await deleteWebhook(BASE_URL, TOKEN, "ohmh_missing")).toBe(false);
+    expect(await deleteWebhook(BASE_URL, TOKEN, "ohmh-missing")).toBe(false);
   });
 
   it("throws HttpError for other failures (e.g. 500)", async () => {
     fetchSpy.mockResolvedValueOnce(jsonResponse(500, { error: "boom" }));
-    await expect(deleteWebhook(BASE_URL, TOKEN, "ohmh_a")).rejects.toBeInstanceOf(HttpError);
+    await expect(deleteWebhook(BASE_URL, TOKEN, "ohmh-a")).rejects.toBeInstanceOf(HttpError);
   });
 });
 
 describe("getWebhookRequests", () => {
   it("passes limit and offset as query params", async () => {
     fetchSpy.mockResolvedValueOnce(jsonResponse(200, { requests: [] }));
-    await getWebhookRequests(BASE_URL, TOKEN, "ohmh_a", 5, 10);
+    await getWebhookRequests(BASE_URL, TOKEN, "ohmh-a", 5, 10);
     const [url] = fetchSpy.mock.calls[0] as [URL | string];
     const built = typeof url === "string" ? new URL(url) : url;
     expect(built.searchParams.get("limit")).toBe("5");
@@ -140,19 +140,19 @@ describe("getWebhookRequests", () => {
 
   it("returns [] when body has no `requests` field", async () => {
     fetchSpy.mockResolvedValueOnce(jsonResponse(200, {}));
-    expect(await getWebhookRequests(BASE_URL, TOKEN, "ohmh_a", 1, 0)).toEqual([]);
+    expect(await getWebhookRequests(BASE_URL, TOKEN, "ohmh-a", 1, 0)).toEqual([]);
   });
 });
 
 describe("getWebhookSourceRequest", () => {
   it("URL-encodes the request id", async () => {
     fetchSpy.mockResolvedValueOnce(
-      jsonResponse(200, { id: "req/with slash", webhookId: "ohmh_a", method: "GET", url: "/", createdAt: "", headers: {}, body: null }),
+      jsonResponse(200, { id: "req/with slash", webhookId: "ohmh-a", method: "GET", url: "/", createdAt: "", headers: {}, body: null }),
     );
-    await getWebhookSourceRequest(BASE_URL, TOKEN, "ohmh_a", "req/with slash");
+    await getWebhookSourceRequest(BASE_URL, TOKEN, "ohmh-a", "req/with slash");
     const [url] = fetchSpy.mock.calls[0] as [string];
     expect(url).toBe(
-      "https://api.example/api/webhooks/ohmh_a/requests/req%2Fwith%20slash",
+      "https://api.example/api/webhooks/ohmh-a/requests/req%2Fwith%20slash",
     );
   });
 });
