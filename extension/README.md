@@ -4,6 +4,8 @@ Receive webhooks at a unique public URL and forward them to a local port — wit
 
 Test webhooks from third-party services (Stripe, GitHub, Slack, …) on your laptop without exposing it to the internet. Oh My Hooks gives you a public URL, streams incoming requests over WebSocket, and forwards them to `http://localhost:<port>` of your choice. The forwarded response stays local — nothing about your local server is sent back to the cloud.
 
+![Oh My Hooks panel in VS Code](https://github.com/satetsu888/ohmh/raw/main/extension/images/panel.png)
+
 ## Quick start
 
 1. Open the **Oh My Hooks** panel from the bottom panel area of VS Code.
