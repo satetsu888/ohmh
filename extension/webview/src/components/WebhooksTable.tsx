@@ -19,7 +19,6 @@ type Props = {
   expandedWebhooks: string[];
   setExpandedWebhooks: (webhooks: string[]) => void;
   requestsData: Record<string, WebhookSourceRequest[]>;
-  setRequestsData: (data: Record<string, WebhookSourceRequest[]>) => void;
   forwardResults: Record<string, ForwardResult>;
   selectedRequestModal: {webhookId: string, request: WebhookSourceRequest} | null;
   setSelectedRequestModal: (modal: {webhookId: string, request: WebhookSourceRequest} | null) => void;
@@ -34,7 +33,6 @@ export const WebhooksTable = ({
   expandedWebhooks,
   setExpandedWebhooks,
   requestsData,
-  setRequestsData,
   forwardResults,
   selectedRequestModal,
   setSelectedRequestModal
@@ -71,12 +69,6 @@ export const WebhooksTable = ({
               }
             }}
             requests={requestsData[webhook.id] || []}
-            onRequestsUpdate={(requests) => {
-              setRequestsData({
-                ...requestsData,
-                [webhook.id]: requests
-              });
-            }}
             forwardResults={forwardResults}
             selectedRequest={selectedRequestModal?.webhookId === webhook.id ? selectedRequestModal.request : null}
             setSelectedRequest={(request) => {

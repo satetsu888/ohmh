@@ -64,12 +64,11 @@ export const ResendRequestMessage = (webhookId: string, request: WebhookSourceRe
   };
 };
 
-export const SaveViewStateMessage = (expandedWebhooks: string[], requestsData: Record<string, any[]>, selectedRequestModal: {webhookId: string, request: any} | null): Message => {
+export const SaveViewStateMessage = (expandedWebhooks: string[], selectedRequestModal: {webhookId: string, request: any} | null): Message => {
   return {
     type: "saveViewState",
     args: {
       expandedWebhooks,
-      requestsData,
       selectedRequestModal,
     },
   };

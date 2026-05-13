@@ -23,7 +23,6 @@ type Props = {
   isExpanded: boolean;
   onToggleExpand: (expanded: boolean) => void;
   requests: WebhookSourceRequest[];
-  onRequestsUpdate: (requests: WebhookSourceRequest[]) => void;
   forwardResults: Record<string, ForwardResult>;
   selectedRequest: WebhookSourceRequest | null;
   setSelectedRequest: (request: WebhookSourceRequest | null) => void;
@@ -43,7 +42,6 @@ export const WebhooksTableRow = ({
   isExpanded,
   onToggleExpand,
   requests,
-  onRequestsUpdate,
   forwardResults,
   selectedRequest,
   setSelectedRequest,
@@ -60,7 +58,6 @@ export const WebhooksTableRow = ({
   const requestsLoader = useWebhookRequestsLoader({
     vscode,
     webhookId: webhook.id,
-    onLoaded: onRequestsUpdate,
   });
 
   // Periodically refresh the relative-time labels while the row is expanded.

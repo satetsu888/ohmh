@@ -47,6 +47,7 @@ The extension consists of two webpack builds:
 - `vscode/` — VS Code 依存ゾーン
   - `secretStorageImpl.ts`: `vscode.SecretStorage` ラッパ (`SecretStore` の VS Code 実装)
 - `lib/`: VS Code 統合 (Authentication / Webview Provider)
+- `requestBuffer.ts`: Webhook リクエスト履歴・forward 結果のインメモリバッファ (パネル非表示中も保持)
 - `extension.ts`, `stateStore.ts`, `api.ts`, `messages.ts`, `util.ts`, `env.d.ts`
 
 VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `forwarder.ts`, `secretStore.ts`, `auth/pkce.ts`) は **`ohmh/shared/`** に置かれており、ここから `../../../shared/...` で import する。CLI と共有しているため、`vscode` の import は `ohmh/shared/eslint.config.mjs` の `no-restricted-imports` で禁止されている (extension 側 ESLint ではなく shared 側で機械的に担保)。
@@ -67,7 +68,13 @@ VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `fo
    - Manages extension state and webhook connections
    - Handles API communication with the Oh My Hooks service
 
-4. **WSClient** (`ohmh/shared/wsClient.ts`)
+4. **RequestBuffer** (`/core/src/requestBuffer.ts`)
+   - Webhook リクエスト履歴と forward 結果のインメモリバッファ
+   - パネル (webview) が非表示でもデータを保持し、再表示時に `viewStateResponse` で復元する
+   - コンストラクタで `onChange` コールバックを受け取り、mutation 時に自動で `emitViewState()` を発火する (手動 emit 不要)
+   - メソッド: `recordRequest`, `recordForwardResult`, `seedFromServer` (サーバ履歴で丸ごと置換), `clearWebhook`, `clearAll`, `snapshot`
+
+5. **WSClient** (`ohmh/shared/wsClient.ts`)
    - Persistent WebSocket connection to the Cloudflare Durable Object
    - Handles subscribe / unsubscribe / reconnect (no response side; the protocol is server → client only)
 
@@ -77,20 +84,22 @@ VS Code API 非依存の共有モジュール (`protocol.ts`, `wsClient.ts`, `fo
    - Messages defined in `/core/src/messages.ts` and `/webview/src/messages.ts`
    - Bidirectional communication via `postMessage` API
 
-2. **Webhook Request Flow** (one-way WS)
-   - Webhook received by the Oh My Hooks service (server-side persistence is an internal concern of the service; ephemeral / anon are pass-through)
-   - Server pushes a WS `request` message to subscribed clients (extension)
-   - Extension immediately pushes `webhookRequestReceived` to the webview so the row shows up
-   - Extension `forwarder.forward()` posts to `http://localhost:<port>`; the result (status / error / durationMs) is pushed to the webview as `webhookForwardResult`
-   - Server is not informed of the forward result (no `response` message exists)
+2. **Webhook Request Flow** (one-way WS → RequestBuffer → viewStateResponse)
+   - Server pushes WS `request` message to the extension
+   - Extension の `handleIncomingRequest` が `RequestBuffer.recordRequest()` → `forwarder.forward()` → `RequestBuffer.recordForwardResult()` を実行
+   - 各 mutation で `RequestBuffer` の `onChange` コールバックが `emitViewState()` を自動発火し、`viewStateResponse` メッセージで webview にデータ全体を送る
+   - webview は `viewStateResponse` から `requestsData` と `forwardResults` を受け取り UI を更新する
+   - パネル非表示中も `RequestBuffer` がデータを保持し、再表示時の `viewStateResponse` で復元される
+   - Server は forward 結果を知らない (no `response` message)
 
 ### Key Message Types
 
-- `initialLoad`: Load initial state when webview opens
-- `signIn`: Trigger authentication flow
-- `connect`: Connect a webhook to a local port
-- `disconnect`: Disconnect a webhook from local port
-- `statusChanged`: Update UI with new state
+- `initialLoad`: webview 起動時に初期状態をリクエスト
+- `signIn` / `useAsGuest`: 認証フロー開始 / ゲストモード移行
+- `connect` / `disconnect`: webhook のローカルポート接続・切断
+- `viewStateResponse`: extension → webview。webhook 一覧・`requestsData`・`forwardResults`・UI state をまとめて送る唯一のデータチャネル
+- `webhookRequestsFetched`: extension → webview。サーバ履歴取得完了の通知 (データは `viewStateResponse` で届く。loading spinner 解除用)
+- `saveViewState`: webview → extension。`expandedWebhooks` / `selectedRequestModal` の UI state を保存 (`requestsData` は含まない — extension 側 `RequestBuffer` が唯一の source of truth)
 
 ### Webhook Kinds (kind awareness in the extension)
 

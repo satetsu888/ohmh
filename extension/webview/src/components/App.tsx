@@ -16,7 +16,6 @@ const App = () => {
     expandedWebhooks,
     setExpandedWebhooks,
     requestsData,
-    setRequestsData,
     forwardResults,
     isInitialized,
     selectedRequestModal,
@@ -28,10 +27,10 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (expandedWebhooks.length > 0 || Object.keys(requestsData).length > 0 || selectedRequestModal) {
-      vscode.postMessage(SaveViewStateMessage(expandedWebhooks, requestsData, selectedRequestModal));
+    if (expandedWebhooks.length > 0 || selectedRequestModal) {
+      vscode.postMessage(SaveViewStateMessage(expandedWebhooks, selectedRequestModal));
     }
-  }, [expandedWebhooks, requestsData, selectedRequestModal]);
+  }, [expandedWebhooks, selectedRequestModal]);
 
   if (!isInitialized) {
     return (
@@ -124,7 +123,6 @@ const App = () => {
         expandedWebhooks={expandedWebhooks}
         setExpandedWebhooks={setExpandedWebhooks}
         requestsData={requestsData}
-        setRequestsData={setRequestsData}
         forwardResults={forwardResults}
         selectedRequestModal={selectedRequestModal}
         setSelectedRequestModal={setSelectedRequestModal}

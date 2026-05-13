@@ -3,11 +3,13 @@ import { randomUUID } from "node:crypto";
 import OhMyHooksAuthenticationProvider from "./lib/OhMyHooksAuthenticationProvider";
 import OhMyHooksWebViewProvider from "./lib/OhMyHooksWebViewProvider";
 import { StateStore, type Status } from "./stateStore";
-import { statusChanged, webhookPortResponse, webhookRequestsResponse, viewStateResponse, refreshRequestsForWebhook, webhookRequestReceived, webhookForwardResult } from "./messages";
+import { statusChanged, webhookPortResponse, viewStateResponse, webhookRequestsFetched, type ForwardResultPayload } from "./messages";
 import * as api from "./api";
+import type { WebhookSourceRequest } from "./api";
 import { WSClient } from "../../../shared/wsClient";
 import { forward } from "../../../shared/forwarder";
 import { RequestMessage } from "../../../shared/protocol";
+import { RequestBuffer } from "./requestBuffer";
 
 // webpack DefinePlugin で build 時に置換される。値は webpack.config.cjs の env を参照。
 const BASE_URL = process.env.OH_MY_HOOKS_BASE_URL!;
@@ -72,41 +74,26 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   };
 
-  // Push the received request to the webview immediately, then forward to the local
-  // port (if any) and report the result back to the webview. The server is never
-  // notified of the result; the WS protocol is one-way.
   const handleIncomingRequest = async (req: RequestMessage, port: number | null): Promise<void> => {
-    if (provider) {
-      provider.postMessage(JSON.stringify(webhookRequestReceived(req.webhookId, {
-        id: req.sourceRequestId,
-        webhookId: req.webhookId,
-        method: req.method,
-        url: req.url,
-        headers: req.headers,
-        body: req.body,
-        createdAt: req.receivedAt,
-      })));
-    }
+    const request: WebhookSourceRequest = {
+      id: req.sourceRequestId,
+      webhookId: req.webhookId,
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      body: req.body,
+      createdAt: req.receivedAt,
+    };
+    requestBuffer.recordRequest(req.webhookId, request);
 
+    let result: ForwardResultPayload;
     if (port === null) {
-      if (provider) {
-        provider.postMessage(JSON.stringify(webhookForwardResult(req.webhookId, req.sourceRequestId, {
-          status: null,
-          error: "webhook is not connected on this client",
-          durationMs: 0,
-        })));
-      }
-      return;
+      result = { status: null, error: "webhook is not connected on this client", durationMs: 0 };
+    } else {
+      const r = await forward(req, { port });
+      result = { status: r.status, error: r.error, durationMs: r.durationMs };
     }
-
-    const result = await forward(req, { port });
-    if (provider) {
-      provider.postMessage(JSON.stringify(webhookForwardResult(req.webhookId, req.sourceRequestId, {
-        status: result.status,
-        error: result.error,
-        durationMs: result.durationMs,
-      })));
-    }
+    requestBuffer.recordForwardResult(req.sourceRequestId, result);
   };
 
   const onRequest = async (req: RequestMessage): Promise<void> => {
@@ -141,6 +128,9 @@ export async function activate(context: vscode.ExtensionContext) {
       onRequest,
       onEphemeralWebhookCreated: (webhookId) => {
         const entry = stateStore.get().webhooks.find((w) => w.isEphemeral);
+        if (entry && entry.id) {
+          requestBuffer.clearWebhook(entry.id);
+        }
         const port = entry?.localPort ?? 0;
         stateStore.setEphemeralWebhookId(webhookId, port);
       },
@@ -154,12 +144,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   let viewState = {
     expandedWebhooks: [] as string[],
-    requestsData: {} as Record<string, any[]>,
-    selectedRequestModal: null as any
+    selectedRequestModal: null as any,
   };
 
-  // Declared early so the notification handler closure can reference it.
+  // Declared early so the handler closures can reference them.
   let provider: OhMyHooksWebViewProvider;
+  let requestBuffer: RequestBuffer;
 
   const initialLoad = async () => {
     // ユーザが前回 guest mode を選んでいた場合は、認証付き API を叩く前に
@@ -206,6 +196,7 @@ export async function activate(context: vscode.ExtensionContext) {
             await stateStore.forceSession();
             // After a successful sign-in, close the anon WS and leave guest mode.
             await closeAnonClient();
+            requestBuffer.clearAll();
             if (wasGuest) {
               stateStore.exitGuestMode();
             }
@@ -230,6 +221,7 @@ export async function activate(context: vscode.ExtensionContext) {
             wsClient = null;
           }
           await closeAnonClient();
+          requestBuffer.clearAll();
           stateStore.enterGuestMode();
           break;
         }
@@ -265,7 +257,10 @@ export async function activate(context: vscode.ExtensionContext) {
               console.error("[anonClient] error:", err);
             });
             anonClient.on("close", () => {
-              // WS closed = server already deleted the webhook. Clear the entry's id.
+              const guestEntry = stateStore.get().webhooks.find((w) => w.isAnonymous);
+              if (guestEntry && guestEntry.id) {
+                requestBuffer.clearWebhook(guestEntry.id);
+              }
               anonForwardPort = null;
               stateStore.clearGuestWebhookId();
             });
@@ -319,9 +314,6 @@ export async function activate(context: vscode.ExtensionContext) {
             }
             client.subscribe(webhook.id);
             await stateStore.setWebhookConnected(targetId);
-            if (viewState.expandedWebhooks.includes(targetId)) {
-              provider.postMessage(JSON.stringify(refreshRequestsForWebhook(targetId)));
-            }
           } catch (err) {
             await stateStore.disconnectWebhook(targetId);
             throw err;
@@ -345,6 +337,7 @@ export async function activate(context: vscode.ExtensionContext) {
           const ephemeralEntry = stateStore.get().webhooks.find((w) => w.isEphemeral);
           if (ephemeralEntry && targetId === ephemeralEntry.id && targetId !== "") {
             stateStore.setEphemeralDisconnecting();
+            requestBuffer.clearWebhook(targetId);
             if (wsClient) {
               wsClient.unsubscribeEphemeral(targetId);
             }
@@ -374,14 +367,14 @@ export async function activate(context: vscode.ExtensionContext) {
             const session = await stateStore.getSession();
             if (!session) {
               vscode.window.showErrorMessage("Not authenticated");
+              provider.postMessage(JSON.stringify(webhookRequestsFetched(message.args.webhookId)));
               return;
             }
             const requests = await api.getWebhookRequests(session, message.args.webhookId, 5);
-            const response = webhookRequestsResponse(message.args.webhookId, requests);
-            provider.postMessage(JSON.stringify(response));
+            requestBuffer.seedFromServer(message.args.webhookId, requests);
+            provider.postMessage(JSON.stringify(webhookRequestsFetched(message.args.webhookId)));
           } catch (err) {
-            const response = webhookRequestsResponse(message.args.webhookId, []);
-            provider.postMessage(JSON.stringify(response));
+            provider.postMessage(JSON.stringify(webhookRequestsFetched(message.args.webhookId)));
             if (err instanceof Error) {
               vscode.window.showErrorMessage(`Failed to fetch requests: ${err.message}`);
             }
@@ -445,13 +438,11 @@ export async function activate(context: vscode.ExtensionContext) {
               receivedAt: sourceRequest.createdAt,
             };
             const result = await forward(reqMessage, { port: webhook.localPort });
-            if (provider) {
-              provider.postMessage(JSON.stringify(webhookForwardResult(message.args.webhookId, sourceRequest.id, {
-                status: result.status,
-                error: result.error,
-                durationMs: result.durationMs,
-              })));
-            }
+            requestBuffer.recordForwardResult(sourceRequest.id, {
+              status: result.status,
+              error: result.error,
+              durationMs: result.durationMs,
+            });
             if (result.error) {
               vscode.window.showErrorMessage(`Resend failed: ${result.error}`);
             } else {
@@ -466,7 +457,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
         case "saveViewState": {
           viewState.expandedWebhooks = message.args.expandedWebhooks || [];
-          viewState.requestsData = message.args.requestsData || {};
           viewState.selectedRequestModal = message.args.selectedRequestModal || null;
           break;
         }
@@ -479,11 +469,22 @@ export async function activate(context: vscode.ExtensionContext) {
   };
 
   provider = new OhMyHooksWebViewProvider(context.extensionUri, messageHandler);
+
+  const emitViewState = (): void => {
+    const snap = requestBuffer.snapshot();
+    provider.postMessage(JSON.stringify(viewStateResponse(
+      viewState.expandedWebhooks,
+      snap.requests,
+      snap.forwardResults,
+      viewState.selectedRequestModal,
+    )));
+  };
+  requestBuffer = new RequestBuffer(emitViewState);
+
   stateStore.on("statusChanged", (status: Status) => {
     provider.postMessage(JSON.stringify(statusChanged(status)));
-    // Also send view state after the status update.
     setTimeout(() => {
-      provider.postMessage(JSON.stringify(viewStateResponse(viewState.expandedWebhooks, viewState.requestsData, viewState.selectedRequestModal)));
+      emitViewState();
     }, 100);
   });
   context.subscriptions.push(
@@ -532,6 +533,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     {
       dispose: () => {
+        requestBuffer.clearAll();
         if (wsClient) {
           void wsClient.close();
         }

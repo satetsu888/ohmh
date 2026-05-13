@@ -23,68 +23,24 @@ export const webhookPortResponse = (webhookId: string, port: number | null): Mes
   };
 };
 
-export const webhookRequestsResponse = (webhookId: string, requests: any[]): Message => {
-  return {
-    type: "webhookRequestsResponse",
-    args: {
-      webhookId,
-      requests
-    }
-  };
-};
+export const viewStateResponse = (
+  expandedWebhooks: string[],
+  requestsData: Record<string, WebhookSourceRequest[]>,
+  forwardResults: Record<string, ForwardResultPayload>,
+  selectedRequestModal?: any,
+): Message => ({
+  type: "viewStateResponse",
+  args: { expandedWebhooks, requestsData, forwardResults, selectedRequestModal },
+});
 
-export const viewStateResponse = (expandedWebhooks: string[], requestsData: Record<string, any[]>, selectedRequestModal?: any): Message => {
-  return {
-    type: "viewStateResponse",
-    args: {
-      expandedWebhooks,
-      requestsData,
-      selectedRequestModal
-    }
-  };
-};
+export const webhookRequestsFetched = (webhookId: string): Message => ({
+  type: "webhookRequestsFetched",
+  args: { webhookId },
+});
 
-export const refreshRequestsForWebhook = (webhookId: string): Message => {
-  return {
-    type: "refreshRequestsForWebhook",
-    args: {
-      webhookId
-    }
-  };
-};
-
-// Pushes a WS-delivered request straight into the webview's in-memory state.
-// Required for ephemeral / anon (the server has no history for them); used for
-// persistent too so the row appears immediately (better UX than refreshRequestsForWebhook).
-export const webhookRequestReceived = (webhookId: string, request: WebhookSourceRequest): Message => {
-  return {
-    type: "webhookRequestReceived",
-    args: {
-      webhookId,
-      request,
-    }
-  };
-};
-
-// Result of forwarding to localhost. Never persisted on the server; reflected only in the webview's local state.
 export type ForwardResultPayload = {
   status: number | null;
   error: string | null;
   durationMs: number;
-};
-
-export const webhookForwardResult = (
-  webhookId: string,
-  sourceRequestId: string,
-  result: ForwardResultPayload,
-): Message => {
-  return {
-    type: "webhookForwardResult",
-    args: {
-      webhookId,
-      sourceRequestId,
-      result,
-    }
-  };
 };
 
