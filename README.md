@@ -21,7 +21,7 @@ See [`cli/README.md`](./cli/README.md) for the full command reference.
 
 ## VS Code extension
 
-Install **Oh My Hooks** from the VS Code Marketplace, sign in via the command palette, and create / connect webhooks from the side panel. See [`extension/README.md`](./extension/README.md) for details.
+Install [**Oh My Hooks**](https://marketplace.visualstudio.com/items?itemName=satetsu888.ohmh) from the VS Code Marketplace, sign in via the command palette, and create / connect webhooks from the side panel. See [`extension/README.md`](./extension/README.md) for details.
 
 ## License
 
