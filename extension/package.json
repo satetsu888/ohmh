@@ -2,7 +2,7 @@
   "name": "ohmh",
   "displayName": "Oh My Hooks",
   "description": "Receive webhooks at a unique URL and forward them to a local port from VS Code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "satetsu888",
   "license": "MIT",
   "homepage": "https://ohmh.satetsu888.dev",
