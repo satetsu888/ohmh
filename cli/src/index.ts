@@ -43,7 +43,7 @@ Environment variables:
 
 Plans (see https://ohmh.satetsu888.dev/settings):
   Free      $0          1 ephemeral, 0 persistent, 100 req/day
-  Metered   $0 base + $0.60/mo per peak persistent webhook
+  Metered   $0 base + $0.60/mo per persistent webhook (prorated)
             1 ephemeral, 10 persistent, 500 req/day, 30d history
 
 For machine-readable output, pass --json. Each subcommand emits NDJSON events

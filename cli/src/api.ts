@@ -43,9 +43,8 @@ export type AccountMe = {
   email: string;
   image: string | null;
   plan: PlanInfo;
-  // Present only when the user is on a usage-billed plan (Metered) with an
-  // active billing period.
-  currentPeakPersistent?: number;
+  // Present only when the user is on the Metered plan.
+  currentPersistentCount?: number;
   estimatedUsageChargeCents?: number;
 };
 

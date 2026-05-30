@@ -31,14 +31,14 @@ export const whoamiCommand = async (opts: WhoamiOptions): Promise<void> => {
       (me.plan.limits.historyDays ? ` · history ${me.plan.limits.historyDays}d` : ""),
   );
 
-  if (me.currentPeakPersistent !== undefined) {
+  if (me.currentPersistentCount !== undefined) {
     info(``);
     info(`This period:`);
-    info(`  Persistent webhooks (peak) : ${me.currentPeakPersistent}`);
+    info(`  Persistent webhooks (current) : ${me.currentPersistentCount}`);
     if (me.estimatedUsageChargeCents !== undefined) {
       info(
-        `  Estimated usage charge     : ${formatCents(me.estimatedUsageChargeCents)} ` +
-          `(= ${me.currentPeakPersistent} × $0.60)`,
+        `  Estimated usage charge        : ${formatCents(me.estimatedUsageChargeCents)} ` +
+          `(= ${me.currentPersistentCount} × $0.60)`,
       );
     }
   }

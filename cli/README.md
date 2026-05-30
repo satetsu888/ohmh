@@ -106,9 +106,10 @@ A skill conforming to the [Agent Skills specification](https://agentskills.io/sp
 |---|---|---|
 | Anonymous (logged out) | $0 | 0 |
 | Free | $0 | 0 |
-| Metered | $0 base + $0.60/mo per peak persistent webhook | 10 |
+| Metered | $0 base + $0.60/mo per persistent webhook (prorated) | 10 |
 
-- Persistent webhooks created with `ohmh create` are **billable on the Metered plan via peak count**. The monthly maximum of concurrently held webhooks × $0.60 is charged.
+- Persistent webhooks created with `ohmh create` are **billed on the Metered plan**, prorated to the day. You are charged for the time each webhook exists within a billing period.
+- Deleting a webhook stops the charge (prorated credit for the remaining period).
 - For short-lived testing, **prefer anonymous / ephemeral (`npx ohmh --port <n>`)** — these are not billed.
 - When an AI agent creates a persistent webhook, always clean up via `trap 'ohmh delete "$ID" --yes' EXIT`. See `skills/ohmh/references/BILLING.md`.
 

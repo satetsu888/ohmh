@@ -106,9 +106,10 @@ URL=$(jq -r 'select(.type=="ready") | .url' /tmp/ohmh.ndjson | head -1)
 |---|---|---|
 | Anonymous (未ログイン) | $0 | 0 |
 | Free | $0 | 0 |
-| Metered | $0 base + $0.60/mo per peak persistent webhook | 10 |
+| Metered | $0 base + $0.60/mo per persistent webhook (日割り) | 10 |
 
-- `ohmh create` で作る persistent webhook は **Metered プランの peak 課金対象**。1 か月の同時保持数の最大値 × $0.60 が請求される
+- `ohmh create` で作る persistent webhook は **Metered プランの日割り課金対象**。各 webhook の保有期間に応じて $0.60/月 が日割りで請求される
+- webhook を削除すると残り期間分のクレジットが返される
 - 短期テストは **匿名 / ephemeral (`npx ohmh --port <n>`) で済ませる** のが推奨。これは課金対象外
 - AI agent が persistent を作る場合は `trap 'ohmh delete "$ID" --yes' EXIT` で必ず掃除する。詳細は `skills/ohmh/references/BILLING.md`
 

@@ -17,7 +17,7 @@ There are three modes, in increasing order of commitment:
 
 - **anonymous** — no sign-in. The webhook is deleted server-side the moment the WebSocket disconnects. Free.
 - **ephemeral** — signed in. Created on subscribe, removed on unsubscribe (24h TTL is a safety net). Free.
-- **persistent** — signed in. Indefinite lifetime, created with `ohmh create`, listed by `ohmh list`. **Billed** under the Metered plan ($0.60/mo per peak persistent webhook). See `references/BILLING.md`.
+- **persistent** — signed in. Indefinite lifetime, created with `ohmh create`, listed by `ohmh list`. **Billed** under the Metered plan ($0.60/mo per persistent webhook, prorated). See `references/BILLING.md`.
 
 ## Modes (decision tree)
 
@@ -29,7 +29,7 @@ Want to receive a webhook locally?
 │   authed ephemeral. 24h TTL. Available even on Free. Not billed.
 ├─ Need a stable URL across sessions    → ohmh login → ohmh create
 │                                         → ohmh --port <n> --id <id>
-│   persistent. Billed under Metered ($0.60/mo per peak).
+│   persistent. Billed under Metered ($0.60/mo, prorated).
 │   Read references/BILLING.md before creating one.
 └─ Replay a past webhook locally        → ohmh resend <id> <reqId> --port <n>
 ```
@@ -94,7 +94,7 @@ trap 'kill "$PID" 2>/dev/null' EXIT INT TERM
 
 ## Cleanup pattern (when creating persistent webhooks)
 
-Persistent webhooks are billed by peak count per period (see `references/BILLING.md`). **Always wrap creation in a `trap` that deletes the webhook on exit**, otherwise an interrupted run leaves the webhook (and the charge) behind:
+Persistent webhooks are billed proportionally while held (see `references/BILLING.md`). **Always wrap creation in a `trap` that deletes the webhook on exit**, otherwise an interrupted run leaves the webhook (and the charge) behind:
 
 ```bash
 ID=$(ohmh --json create | jq -r '.webhook.id')
@@ -135,7 +135,7 @@ The full schema for every event (including `list`, `create`, `delete`, `whoami`,
 ## Plans and billing (summary)
 
 - Anonymous and ephemeral webhooks are free. Use them for one-off testing.
-- **Persistent webhooks are billed** under the Metered plan ($0.60/mo per peak persistent webhook within a billing period). The peak is the maximum count held simultaneously during the period — it does not decrease when a webhook is deleted within the same period.
+- **Persistent webhooks are billed** under the Metered plan ($0.60/mo per persistent webhook, prorated to the day). Deleting a webhook stops the charge and issues a prorated credit.
 - Default behavior: do not call `ohmh create` unless the user explicitly asks for a persistent webhook. If you do create one, use the Cleanup pattern above and confirm with the user before leaving it behind.
 
 Full details, the `402` failure modes, and how to view the running estimated charge with `ohmh whoami` are in `references/BILLING.md`.

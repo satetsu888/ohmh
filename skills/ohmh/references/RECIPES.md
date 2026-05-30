@@ -120,7 +120,7 @@ echo "OK: webhook delivered with status $STATUS"
 
 ## Reuse an existing persistent webhook (avoid creating a new one)
 
-When the user already has at least one persistent webhook, prefer reusing it over calling `ohmh create`. Creating a new persistent webhook can raise the period's peak count and increase the bill:
+When the user already has at least one persistent webhook, prefer reusing it over calling `ohmh create`. Creating a new persistent webhook starts a prorated charge immediately:
 
 ```bash
 ID=$(ohmh --json list \

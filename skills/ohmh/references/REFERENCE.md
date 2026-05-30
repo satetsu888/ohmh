@@ -44,9 +44,9 @@ With `--json`, stdout becomes **NDJSON** (one JSON object per line). Human-reada
 
 | `type` | Fields |
 |---|---|
-| `whoami` | `id`, `name`, `email`, `image` (string \| null), `plan: { key, name, limits: { ephemeral, persistent, requestsPerDay, historyDays } }`, `currentPeakPersistent?` (number), `estimatedUsageChargeCents?` (number) |
+| `whoami` | `id`, `name`, `email`, `image` (string \| null), `plan: { key, name, limits: { ephemeral, persistent, requestsPerDay, historyDays } }`, `currentPersistentCount?` (number), `estimatedUsageChargeCents?` (number) |
 
-`currentPeakPersistent` and `estimatedUsageChargeCents` are present only when the account is on the Metered plan with an active billing period. See `references/BILLING.md` for the meaning.
+`currentPersistentCount` and `estimatedUsageChargeCents` are present only when the account is on the Metered plan. See `references/BILLING.md` for the meaning.
 
 ### `list`
 
